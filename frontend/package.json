@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@coreui/coreui": "^5.9.1",
+    "@coreui/react": "^5.13.1",
     "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0"
