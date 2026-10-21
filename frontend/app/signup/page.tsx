@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
-const inputClass = "mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 dark:border-zinc-700";
+const inputClass = "form-control mt-1";
 
 export default function SignUpPage() {
   const [supabase] = useState(createClient);
@@ -51,46 +51,46 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-6 py-12 sm:py-16">
-      <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-zinc-500">Property management</p>
-      <h1 className="mb-6 text-3xl font-semibold tracking-tight">Create an account</h1>
+    <div className="mx-auto" style={{ maxWidth: "28rem" }}>
+      <p className="mb-1 small fw-semibold text-uppercase text-body-secondary">Property management</p>
+      <h1 className="mb-4">Create an account</h1>
 
       {error && (
-        <p role="alert" className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+        <p role="alert" className="alert alert-danger">
           {error}
         </p>
       )}
 
       {checkEmail ? (
-        <div role="status" className="space-y-4 rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
-          <h2 className="text-xl font-semibold">Check your email</h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <div role="status" className="card card-body d-grid gap-3">
+          <h2 className="h4">Check your email</h2>
+          <p className="text-body-secondary">
             If confirmation is required, follow the link sent to {email.trim()}, then sign in.
           </p>
-          <Link href="/properties" className="inline-block text-sm font-medium underline">Go to sign in</Link>
+          <Link href="/properties">Go to sign in</Link>
         </div>
       ) : (
-        <form onSubmit={signUp} className="space-y-4 rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
-          <label className="block text-sm font-medium">Name
+        <form onSubmit={signUp} className="card card-body d-grid gap-3">
+          <label className="form-label">Name
             <input type="text" required autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className={inputClass} />
           </label>
-          <label className="block text-sm font-medium">Email
+          <label className="form-label">Email
             <input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={inputClass} />
           </label>
-          <label className="block text-sm font-medium">Password
+          <label className="form-label">Password
             <input type="password" required minLength={6} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} />
           </label>
-          <label className="block text-sm font-medium">Confirm password
+          <label className="form-label">Confirm password
             <input type="password" required minLength={6} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={inputClass} />
           </label>
-          <button type="submit" disabled={busy} className="rounded-lg bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">
+          <button type="submit" disabled={busy} className="btn btn-primary">
             {busy ? "Creating account…" : "Create account"}
           </button>
-          <p className="text-sm text-zinc-500">
-            Already have an account? <Link href="/properties" className="font-medium text-zinc-900 underline dark:text-white">Sign in</Link>
+          <p className="mb-0 text-body-secondary">
+            Already have an account? <Link href="/properties">Sign in</Link>
           </p>
         </form>
       )}
-    </main>
+    </div>
   );
 }
