@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
+import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 
 type Property = { id: string; name: string; address: string | null };
@@ -167,6 +168,9 @@ export default function PropertiesPage() {
             <input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} />
           </label>
           <button type="submit" disabled={busy} className={primaryButtonClass}>{busy ? "Signing in…" : "Sign in"}</button>
+          <p className="text-sm text-zinc-500">
+            New here? <Link href="/signup" className="font-medium text-zinc-900 underline dark:text-white">Create an account</Link>
+          </p>
         </form>
       ) : (
         <div className="space-y-8">
