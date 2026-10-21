@@ -1,0 +1,26 @@
+@use "../../../styles/variables" as *;
+
+.uploader {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+.dropzone {
+  border: 2px dashed $border-color;
+  border-radius: $border-radius-lg;
+  padding: $spacer * 1.5;
+  text-align: center;
+  margin-bottom: $spacer * 1.5;
+}
+
+.icon {
+  display: block;
+  margin: 0 auto $spacer * 0.5;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacer * 0.75;
+  margin-top: $spacer;
+}
