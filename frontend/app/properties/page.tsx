@@ -152,6 +152,7 @@ export default function PropertiesPage() {
         </div>
         {user && <div className="d-flex align-items-center gap-3">
           <span className="text-body-secondary">{user.email}</span>
+          <Link href="/reset-password">Change password</Link>
           <button type="button" onClick={signOut} disabled={busy} className={buttonClass}>Sign out</button>
         </div>}
       </header>
@@ -171,6 +172,7 @@ export default function PropertiesPage() {
           <p className="mb-0 text-body-secondary">
             New here? <Link href="/signup">Create an account</Link>
           </p>
+          <p className="mb-0"><Link href="/reset-password">Forgot your password?</Link></p>
         </form>
       ) : (
         <div className="d-grid gap-4">
