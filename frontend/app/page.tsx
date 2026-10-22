@@ -7,6 +7,15 @@ export default function Home() {
       <Link href="/invoices/upload" className="btn btn-primary">
         Upload Invoice
       </Link>
+      <Link href="/signup" className="btn btn-primary">
+        Create User
+      </Link>
+      <Link href="/properties" className="btn btn-primary">
+        Manage Properties
+      </Link>
+      <Link href="/reset-password" className="btn btn-primary">
+        Reset Password
+      </Link>
     </>
   );
 }
