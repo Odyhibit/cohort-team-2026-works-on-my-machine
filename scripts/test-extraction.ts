@@ -1,5 +1,6 @@
 import { PDFParse } from "pdf-parse";
 import { readFile } from "node:fs/promises";
+import { parseInvoice } from "./invoice-parser";
 
 async function run() {
   const filename = process.argv[2];
@@ -13,7 +14,10 @@ async function run() {
   const parser = new PDFParse({ data: buffer });
 
   const result = await parser.getText();
-  console.log(result.text);
+  console.log(JSON.stringify(parseInvoice(result.text), null, 2));
 }
 
-run();
+run().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
