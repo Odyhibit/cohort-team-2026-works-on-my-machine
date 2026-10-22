@@ -7,9 +7,9 @@ import { createClient } from "@/utils/supabase/client";
 
 type Property = { id: string; name: string; address: string | null };
 
-const inputClass = "mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 dark:border-zinc-700";
-const buttonClass = "rounded-lg border border-zinc-300 px-3 py-2 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-900";
-const primaryButtonClass = "rounded-lg bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200";
+const inputClass = "form-control mt-1";
+const buttonClass = "btn btn-outline-secondary";
+const primaryButtonClass = "btn btn-primary";
 
 export default function PropertiesPage() {
   const [supabase] = useState(createClient);
@@ -144,64 +144,66 @@ export default function PropertiesPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 py-12 sm:py-16">
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
+    <div className="mx-auto" style={{ maxWidth: "48rem" }}>
+      <header className="mb-4 d-flex flex-wrap align-items-start justify-content-between gap-3">
         <div>
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-zinc-500">Property management</p>
-          <h1 className="text-3xl font-semibold tracking-tight">Properties</h1>
+          <p className="mb-1 small fw-semibold text-uppercase text-body-secondary">Property management</p>
+          <h1>Properties</h1>
         </div>
-        {user && <div className="flex items-center gap-3 text-sm">
-          <span className="text-zinc-500">{user.email}</span>
+        {user && <div className="d-flex align-items-center gap-3">
+          <span className="text-body-secondary">{user.email}</span>
+          <Link href="/reset-password">Change password</Link>
           <button type="button" onClick={signOut} disabled={busy} className={buttonClass}>Sign out</button>
         </div>}
       </header>
 
-      {error && <p role="alert" className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">{error}</p>}
+      {error && <p role="alert" className="alert alert-danger">{error}</p>}
 
-      {checkingSession ? <p className="text-zinc-500">Checking your session…</p> : !user ? (
-        <form onSubmit={signIn} className="space-y-4 rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
-          <h2 className="text-xl font-semibold">Sign in to manage properties</h2>
-          <label className="block text-sm font-medium">Email
+      {checkingSession ? <p className="text-body-secondary">Checking your session…</p> : !user ? (
+        <form onSubmit={signIn} className="card card-body d-grid gap-3">
+          <h2 className="h4">Sign in to manage properties</h2>
+          <label className="form-label">Email
             <input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={inputClass} />
           </label>
-          <label className="block text-sm font-medium">Password
+          <label className="form-label">Password
             <input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} />
           </label>
           <button type="submit" disabled={busy} className={primaryButtonClass}>{busy ? "Signing in…" : "Sign in"}</button>
-          <p className="text-sm text-zinc-500">
-            New here? <Link href="/signup" className="font-medium text-zinc-900 underline dark:text-white">Create an account</Link>
+          <p className="mb-0 text-body-secondary">
+            New here? <Link href="/signup">Create an account</Link>
           </p>
+          <p className="mb-0"><Link href="/reset-password">Forgot your password?</Link></p>
         </form>
       ) : (
-        <div className="space-y-8">
-          <form onSubmit={saveProperty} className="space-y-4 rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
-            <h2 className="text-xl font-semibold">{editingId ? "Edit property" : "Add a property"}</h2>
-            <label className="block text-sm font-medium">Name
+        <div className="d-grid gap-4">
+          <form onSubmit={saveProperty} className="card card-body d-grid gap-3">
+            <h2 className="h4">{editingId ? "Edit property" : "Add a property"}</h2>
+            <label className="form-label">Name
               <input type="text" required value={name} onChange={(event) => setName(event.target.value)} className={inputClass} />
             </label>
-            <label className="block text-sm font-medium">Address <span className="font-normal text-zinc-500">(optional)</span>
+            <label className="form-label">Address <span className="text-body-secondary">(optional)</span>
               <input type="text" value={address} onChange={(event) => setAddress(event.target.value)} className={inputClass} />
             </label>
-            <div className="flex gap-3">
+            <div className="d-flex gap-3">
               <button type="submit" disabled={busy} className={primaryButtonClass}>{busy ? "Saving…" : editingId ? "Save changes" : "Add property"}</button>
               {editingId && <button type="button" onClick={cancelEditing} disabled={busy} className={buttonClass}>Cancel</button>}
             </div>
           </form>
 
           <section aria-labelledby="property-list-title">
-            <h2 id="property-list-title" className="mb-4 text-xl font-semibold">Saved properties</h2>
-            {loadingProperties ? <p className="text-zinc-500">Loading properties…</p> : properties.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-zinc-500 dark:border-zinc-700">No properties yet. Add one above.</p>
+            <h2 id="property-list-title" className="h4 mb-3">Saved properties</h2>
+            {loadingProperties ? <p className="text-body-secondary">Loading properties…</p> : properties.length === 0 ? (
+              <p className="card card-body text-body-secondary">No properties yet. Add one above.</p>
             ) : (
-              <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-                {properties.map((property) => <li key={property.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <ul className="list-group">
+                {properties.map((property) => <li key={property.id} className="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-3">
                   <div>
-                    <p className="font-medium">{property.name}</p>
-                    {property.address && <p className="text-sm text-zinc-500">{property.address}</p>}
+                    <p className="fw-medium mb-0">{property.name}</p>
+                    {property.address && <p className="small text-body-secondary mb-0">{property.address}</p>}
                   </div>
-                  <div className="flex gap-2 text-sm">
+                  <div className="d-flex gap-2">
                     <button type="button" onClick={() => startEditing(property)} disabled={busy} className={buttonClass}>Edit</button>
-                    <button type="button" onClick={() => deleteProperty(property)} disabled={busy} className="rounded-lg border border-red-300 px-3 py-2 text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950">Delete</button>
+                    <button type="button" onClick={() => deleteProperty(property)} disabled={busy} className="btn btn-outline-danger">Delete</button>
                   </div>
                 </li>)}
               </ul>
@@ -209,6 +211,6 @@ export default function PropertiesPage() {
           </section>
         </div>
       )}
-    </main>
+    </div>
   );
 }

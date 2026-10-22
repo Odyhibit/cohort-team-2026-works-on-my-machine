@@ -1,0 +1,10 @@
+// Global stylesheet entry, imported once from app/layout.tsx.
+
+// Theming: CoreUI variable overrides (colors, fonts, layout) live in _variables.scss.
+// It must be @use'd first so CoreUI compiles with those overrides applied.
+@use "variables";
+
+// Full CoreUI stylesheet, including Reboot (CSS reset), components and utilities.
+@use "@coreui/coreui/scss/coreui";
+
+// Global custom styles go below the CoreUI import so they can override it.

@@ -16,6 +16,10 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### Password reset setup
+
+In the Supabase Dashboard, add each app's exact `/reset-password` URL under Authentication → URL Configuration → Redirect URLs. For example, add `http://localhost:3000/reset-password` for local testing and `https://your-app.vercel.app/reset-password` for the deployed app. Recovery emails return to this page so the user can choose a new password.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
