@@ -1,177 +1,521 @@
-# CYC Cohort 2026 - Works on My Machine
+# CYC Cohort 2026 — Works on My Machine
 
-1. Project Overview
+**Team 5 | Fall 2026 CYC Cohort**
 
-- What problem are we solving?
-- Who is the application for?
-- What is our proposed solution?
-- What does success look like?
+An invoice-processing application that helps property management and accounts-payable teams extract, review, approve, and process vendor invoices.
 
-2. Minimum Viable Product (MVP)
+## 1. Project Overview
 
-Goal: Build a working prototype that processes a PDF bill and supports human review.
+### The Problem
 
-Proposed workflow:
+Processing invoices manually can be time-consuming and error-prone. Accounts-payable employees must read invoices, enter financial information, verify accuracy, obtain approvals, and submit payments.
 
-1. Upload a PDF invoice.
-2. Extract vendor, amount, due date, and invoice ID.
-3. Display extracted information for review and correction.
-4. Allow the user to approve or reject.
-5. Save the decision and allow it to be retrieved.
+Our project explores how software can simplify this workflow while keeping financial information accurate and maintaining appropriate human oversight.
 
-Out of scope for the initial MVP:
+### Our Solution
 
--Real Payments
--Automated vendor website interactions
--Email Invoice ingestion
--Fully autonomous payment processing
+Build a full-stack web application that allows users to upload a PDF invoice, extract its information, review and correct the results, approve or reject the invoice, save it, and submit payment through a fictional vendor website.
 
-3. Technology Stack
+### MVP Goal
 
-Pending team decision - Jira DC-40
+**Deliver one complete, deployed invoice-processing workflow, including payment through a mock vendor website.**
 
--Frontend:
--Backend:
--Database:
--PDF extraction:
--Hosting/deployment:
--Testing:
+Success means demonstrating the complete workflow with fictional invoices, persistent data, and verifiable results.
 
-4. Getting Started
+## 2. Minimum Viable Product (MVP)
 
-To be completed once the stack is finalized.
+### End-to-End Workflow
 
--Prerequisites
--Close the repository
--install dependencies
--Configure local environment
--start the application
--Run tests
+1. **Upload PDF:** A user uploads a fictional vendor invoice.
+2. **Extract:** The application extracts four required fields:
+   - Vendor
+   - Invoice number
+   - Amount due
+   - Due date
+3. **Review and Correct:** The user verifies the extracted information and corrects any errors.
+4. **Approve or Reject:** The invoice follows the appropriate approval path.
+5. **Save and Reload:** Invoice details and decisions persist and can be retrieved.
+6. **Submit Mock Payment:** An eligible invoice is submitted through the fictional vendor payment website.
+7. **Record Result:** The application records and displays the mock payment result.
 
-5. Project Structure
+### Important Business Rules
 
-Document the actual folder structure after the project is initialized.
+- Missing or uncertain extraction results must not be invented.
+- Invoice corrections must persist after saving.
+- Rejected invoices must not be submitted for payment.
+- Approval does not automatically mean payment was successful.
+- Failed payment attempts must be recorded accurately.
+- Duplicate payment submissions must be prevented.
+- All transactions use fictional data. No real money is transferred.
 
-6. Frontend UI: CoreUI
+### Approval Paths
 
-The frontend (`frontend/`) uses [CoreUI for React](https://coreui.io/react/docs/getting-started/introduction/) (`@coreui/react` + `@coreui/coreui`) for components and base styles, with Sass for customization. Tailwind is **not** used.
+The proposed workflow includes two approval paths:
 
-**Where things live**
+**Manual Approval:** An authorized user reviews and approves or rejects an invoice before payment.
 
+**Configured Automatic Approval:** For eligible invoice types or vendors, submitting the invoice may constitute the user's authorization to proceed through a predefined approval workflow.
+
+The precise automatic-approval conditions and permissions require confirmation before implementation.
+
+### Outside the Initial MVP
+
+Unless separately approved:
+
+- Real-money transactions
+- Production payment-provider integrations
+- Email-based invoice intake
+- Broad property-management portal functionality
+- Fully autonomous financial operations
+- Advanced reporting and analytics
+
+Mock vendor-site payment is explicitly **inside** the MVP scope.
+
+## 3. Technology Stack
+
+Technology choices must follow approved team decisions in [DC-40](https://one-atlas-duuf.atlassian.net/browse/DC-40).
+
+| Component | Current documentation |
+|---|---|
+| Frontend | Next.js / React / TypeScript |
+| UI framework | CoreUI for React |
+| Styling | Sass / SCSS |
+| Backend | Confirm approved implementation |
+| Database | Confirm approved implementation |
+| PDF extraction | Confirm implementation approach |
+| Deployment | Vercel frontend deployment exists; verify remaining services |
+| Testing | Confirm available project scripts and tools |
+
+Do not treat proposed backend, database, or hosting choices as approved without checking the team decision record.
+
+## 4. Getting Started
+
+### Prerequisites
+
+- Git
+- Node.js and npm versions compatible with the frontend project
+- Repository access
+- Access to the required development environment configuration
+
+Check the project's package files for supported runtime versions.
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/dallassoftwaredevelopers/cohort-team-2026-works-on-my-machine.git
+cd cohort-team-2026-works-on-my-machine
 ```
+
+### Frontend Setup
+
+The frontend application is located in `frontend/`.
+
+```bash
+cd frontend
+npm install
+```
+
+Review `frontend/package.json` to confirm the available development commands.
+
+For a standard Next.js development script:
+
+```bash
+npm run dev
+```
+
+Open the local URL printed by the development server.
+
+**Note:** The commands above describe the intended setup. They have not been independently validated against the latest repository configuration.
+
+### Backend Setup
+
+Backend setup instructions must be added or verified against the team's actual implementation.
+
+Document:
+
+- Required language/runtime version
+- Dependency installation
+- Local server startup command
+- API base URL
+- Database connectivity
+- PDF extraction dependencies
+- Test commands
+
+Avoid documenting speculative commands as though they are operational.
+
+### Environment Variables
+
+Never commit credentials, tokens, passwords, or production secrets.
+
+Environment configuration should follow these conventions:
+
+- Use `.env.example` files containing placeholder values only.
+- Keep real `.env` files out of version control.
+- Document the purpose of every required variable.
+- Confirm that `.gitignore` excludes local secret files.
+- Share credentials through an approved secure method.
+
+**Pending verification:** The required environment variables and `.env.example` files must be checked against the actual frontend and backend implementation.
+
+### Troubleshooting
+
+If local setup fails:
+
+1. Check the README and installed runtime versions.
+2. Verify dependencies are installed.
+3. Confirm required environment variables are configured.
+4. Review the terminal error message.
+5. Search existing Jira issues and GitHub PRs for the same problem.
+6. Share reproducible details with the team.
+
+For the known CoreUI/Turbopack Sass issue, see [DC-85](https://one-atlas-duuf.atlassian.net/browse/DC-85).
+
+## 5. Project Structure
+
+The repository includes a `frontend/` application.
+
+Document the remaining folder structure against the actual repository before treating it as authoritative.
+
+A representative frontend structure is:
+
+```text
 frontend/
+├── app/
+│   └── invoices/
+│       └── upload/
+│           ├── page.tsx
+│           ├── upload.client.tsx
+│           └── upload.module.scss
 ├── styles/
-│   ├── _variables.scss   ← CoreUI variable overrides (theme colors, fonts, spacing)
-│   └── main.scss         ← global entry: loads variables, then all of CoreUI
-└── app/
-    └── invoices/upload/
-        ├── page.tsx            ← Server Component
-        ├── upload.client.tsx   ← Client Component sibling (state, handlers)
-        └── upload.module.scss  ← sidecar styles for custom classes
+│   ├── _variables.scss
+│   └── main.scss
+└── package.json
 ```
 
-**Conventions**
+This illustrates the documented CoreUI conventions, not a fresh verification of every file path.
 
-- `page.tsx` stays a Server Component. Interactive UI goes in a sibling `*.client.tsx` file with `"use client"` at the top.
-- Which CoreUI components can go where:
-  - **In `page.tsx` (server):** use only layout components (`CContainer`, `CRow`, `CCol`, `CCard`, `CCardHeader`, `CCardBody`). For link buttons, use Next's `Link` with CoreUI's classes: `<Link href="/x" className="btn btn-primary">`.
-  - **Everything else** (`CButton`, `CFormInput`, `CAlert`, `CModal`, `CDropdown`, ...) uses React hooks, so it goes in the `*.client.tsx` file and is imported from `@coreui/react`.
-  - **Not sure which kind a component is?** If `npm run build` fails with `useState is not a function`, move that component into the client file.
-- Use CoreUI components and utility classes (`mb-3`, `d-flex`, `text-body-secondary`) first. Custom classes go in a `.module.scss` file next to the component.
-- Don't add global element styles (`input { ... }`, `button { ... }`). They override CoreUI. Any global styles belong in `styles/main.scss`, below the CoreUI import.
+Backend, database, and extraction directories should be documented once verified.
 
-**Customizing the theme**
+## 6. Frontend UI — CoreUI
 
-Add Sass variable overrides inside the `with (...)` map in `styles/_variables.scss`. Any variable from `node_modules/@coreui/coreui/scss/_variables.scss` can be overridden:
+The frontend uses [CoreUI for React](https://coreui.io/react/docs/getting-started/introduction/) with Sass customization.
 
-```scss
-@forward "@coreui/coreui/scss/variables" with (
-  $primary: #2563eb !default,
-  $border-radius: 0.5rem !default,
-);
+Tailwind is not used in the documented frontend styling approach.
+
+### Component Conventions
+
+- Keep `page.tsx` as a Server Component when possible.
+- Place interactive UI in sibling `*.client.tsx` components.
+- Use `"use client"` for components requiring browser interaction or React client hooks.
+- Use CoreUI layout components for page structure.
+- Prefer CoreUI components and utility classes before introducing custom styling.
+- Keep custom component styles in adjacent `.module.scss` files.
+- Avoid global element selectors that unintentionally override CoreUI.
+
+### Server and Client Components
+
+Layout components such as `CContainer`, `CRow`, `CCol`, `CCard`, `CCardHeader`, and `CCardBody` are documented for server-side layout use.
+
+Interactive components such as `CButton`, `CFormInput`, `CAlert`, `CModal`, and `CDropdown` belong in client components when they require client-side React behavior.
+
+For navigation links, use Next.js `Link` with the appropriate CoreUI classes.
+
+### Sass Conventions
+
+The documented styling files are:
+
+```text
+frontend/styles/_variables.scss
+frontend/styles/main.scss
 ```
 
-**Using CoreUI variables and mixins in a module**
+Use `_variables.scss` for CoreUI variable customization.
 
-`_variables.scss` outputs no CSS, so modules can import it without duplicating CoreUI:
+Use `main.scss` for global CoreUI styling and intentionally shared global styles.
 
-```scss
-// app/example.module.scss
-@use "../styles/variables" as *;
+Consult the installed CoreUI version before changing Sass imports or variable-forwarding patterns, particularly while DC-85 is being resolved.
 
-.panel {
-  padding: $spacer;
-  border-radius: $border-radius-lg;
+### CoreUI References
 
-  @include media-breakpoint-up(md) {
-    padding: $spacer * 2;
-  }
-}
-```
-
-**Reset:** CoreUI includes [Reboot](https://coreui.io/bootstrap/docs/content/reboot/), a Bootstrap-style CSS reset, and `styles/main.scss` already loads it. Don't add another reset.
-
-**Docs**
-
-- [Getting started](https://coreui.io/react/docs/getting-started/introduction/)
-- [Sass customization](https://coreui.io/react/docs/customize/sass/), covering variables, maps and the import order
-- [CSS variables](https://coreui.io/react/docs/customize/css-variables/), which are the `--cui-*` properties for runtime theming
-- [Color modes / dark mode](https://coreui.io/bootstrap/docs/customize/color-modes/)
+- [Getting Started](https://coreui.io/react/docs/getting-started/introduction/)
+- [Sass Customization](https://coreui.io/react/docs/customize/sass/)
+- [CSS Variables](https://coreui.io/react/docs/customize/css-variables/)
 - [Grid](https://coreui.io/react/docs/layout/grid/)
-- [Forms overview](https://coreui.io/react/docs/forms/overview/), [Form input](https://coreui.io/react/docs/forms/input/), [Validation](https://coreui.io/react/docs/forms/validation/)
-- [Button](https://coreui.io/react/docs/components/button/), [Card](https://coreui.io/react/docs/components/card/), [Alert](https://coreui.io/react/docs/components/alert/)
-- [Spacing utilities](https://coreui.io/bootstrap/docs/utilities/spacing/), [Utility API](https://coreui.io/bootstrap/docs/utilities/api/)
+- [Forms](https://coreui.io/react/docs/forms/overview/)
+- [Buttons](https://coreui.io/react/docs/components/button/)
 
-7. Team and Collaboration
+## 7. Team and Collaboration
 
--Team 5 members and responsibilities
--How to claim a Jira task
--Branch naming conventions
--Pull request and code review process
--Definition of Done
+### Current Team Members
 
-8. Project Management and Resources
+- Tim Lines
+- Cheryl Carpenter
+- Amy Denzer
+- Promise Morka
+- Josh Bloom
+- Mandela Tumukunde
+- Eric Aguayo
 
--Jira Project
--Miro Collaboration Board
--GitHub Repository
--Discord team channel
--Sample invoice PDFs
+There are seven current team members.
 
-9. Testing and Acceptance Criteria
+Work ownership is tracked in Jira. Contributions and technical responsibilities are collaborative rather than permanently assigned by this README.
 
--PDF upload succeeds.
--Four required fields are extracted from a sample invoice.
--Extracted values can be corrected.
--Invoice can be approved or rejected.
--Saved decisions persist and can be retrieved.
--The complete workflow runs in the deployed application.
+### Jira Workflow
 
-10. Sprint Goals and Roadmap
+[Jira Board — Project DC](https://one-atlas-duuf.atlassian.net/jira/software/projects/DC/boards/178)
 
-Initial MVP: One deployed, working invoice-review workflow.
+Use the following status meanings:
 
-Future possibilities:
+| Status | Meaning |
+|---|---|
+| Backlog | Work needs clarification, prioritization, or prerequisites |
+| Ready | Scope and acceptance criteria are clear; work can begin |
+| In Progress | Someone is actively implementing or completing the work |
+| Blocked | Progress cannot continue until a dependency is resolved |
+| Code Review | Work is awaiting or undergoing review |
+| Done | The agreed Definition of Done has been satisfied |
 
--Support multiple invoice formats
--Improve extraction accuracy
--Detect duplicate invoices
--Email-based invoice intake
--Payment-provider integrations
--Approval notifications and automation
+**Critical priority** identifies work required for the MVP. Priority does not imply that a ticket is Ready.
 
-11. AI Usage Policy
+Before starting:
 
-Document the cohort's current restrictions on AI-assisted code generation, including the initial two-week restriction and any additional guidance from the organizers.
+1. Check existing Jira issues.
+2. Confirm the task is Ready.
+3. Review acceptance criteria and dependencies.
+4. Coordinate ownership with the team.
+5. Update status as work progresses.
+6. Link the relevant PR and testing evidence.
 
-12. Contributing
+Avoid duplicate tickets when existing issues can be updated.
 
--Select an available Jira issue.
--Confirm ownership.
--Implement and test the change.
--Open a pull request.
--Request review before merging.
+## 8. Git and Pull Request Conventions
 
-13. License
+### Branches
 
-To be determined by the repository owners or cohort organizers.
+Use feature branches rather than committing directly to `main`.
+
+Suggested naming:
+
+```text
+feature/DC-56-upload-screen
+fix/DC-85-coreui-sass
+docs/DC-52-readme
+test/DC-64-extraction-tests
+```
+
+These names are recommended conventions, subject to team agreement.
+
+### Commits
+
+Write focused commits with descriptive messages.
+
+Examples:
+
+```text
+docs: update MVP workflow in README
+fix: resolve invoice review validation issue
+test: add extraction edge-case coverage
+```
+
+### Pull Requests
+
+Before requesting a merge:
+
+- Reference the relevant Jira issue.
+- Explain what changed and why.
+- Document how the change was tested.
+- Include screenshots or examples for UI changes where useful.
+- Identify known limitations.
+- Resolve blocking review feedback.
+- Obtain at least one formal teammate approval before merging.
+
+A positive comment is not necessarily a formal GitHub approving review.
+
+Do not push directly to `main` unless explicitly permitted by the team's repository rules.
+
+**Repository protection settings:** Confirm whether `main` branch protection is enabled. If changes require organization-admin permissions, document the outstanding request.
+
+## 9. Testing and Acceptance Criteria
+
+### Happy-Path Test
+
+Using a fictional sample invoice:
+
+1. Upload the PDF.
+2. Confirm the four required fields are extracted.
+3. Correct at least one extracted value.
+4. Save the invoice.
+5. Reload it and verify the correction persisted.
+6. Approve the invoice.
+7. Submit the mock payment.
+8. Verify the mock vendor website's result.
+9. Reload the invoice and confirm the payment status is preserved.
+
+### Rejection Test
+
+1. Upload and review an invoice.
+2. Reject the invoice.
+3. Verify the rejection persists.
+4. Confirm the invoice cannot proceed to mock payment.
+
+### Error and Edge Cases
+
+Test:
+
+- Invalid or unsupported PDF
+- Missing invoice fields
+- Incorrect extracted values
+- Invalid amount or date
+- Save or retrieval failure
+- Mock vendor website failure
+- Duplicate payment submission
+- Unavailable or unsuccessful payment response
+
+### Extraction Benchmark
+
+Use the team's fictional invoice benchmark and associated Jira tasks to evaluate extraction quality.
+
+Do not invent missing values or substitute unrelated financial fields.
+
+Relevant tasks:
+
+- [DC-37 — Extraction Benchmark](https://one-atlas-duuf.atlassian.net/browse/DC-37)
+- [DC-64 — Extraction Accuracy Tests](https://one-atlas-duuf.atlassian.net/browse/DC-64)
+
+### Integration Verification
+
+[DC-65 — Integrate and Test Complete MVP Workflow](https://one-atlas-duuf.atlassian.net/browse/DC-65) tracks the full deployed integration.
+
+Passing individual component tests is not sufficient evidence that the entire workflow works.
+
+## 10. Definition of Done
+
+A development task is Done when applicable requirements have been satisfied:
+
+- Acceptance criteria are met.
+- The change works as intended.
+- Relevant tests pass.
+- Error conditions are handled.
+- Code is readable and maintainable.
+- A teammate has reviewed and formally approved the PR.
+- Changes are merged according to repository rules.
+- Documentation is updated where needed.
+- Jira contains relevant verification evidence.
+- No real credentials or sensitive payment information have been exposed.
+
+Documentation-only tasks should have their own appropriate verification criteria.
+
+A working prototype is not automatically Done.
+
+## 11. MVP Roadmap
+
+### Phase 1 — Foundation
+
+- Confirm the technology stack.
+- Establish frontend/backend integration.
+- Define invoice data structures and API contracts.
+- Establish local development conventions.
+
+### Phase 2 — Invoice Processing
+
+- PDF upload
+- Four-field extraction
+- Review and correction
+- Approval/rejection
+- Persistence and retrieval
+
+### Phase 3 — Mock Payment
+
+- Confirm fictional vendor-site integration interface.
+- Submit eligible invoices.
+- Record mock payment results.
+- Handle failed and duplicate attempts.
+
+### Phase 4 — Integration and Deployment
+
+- Connect the complete workflow.
+- Test the deployed application.
+- Fix integration defects.
+- Review and merge PRs.
+- Demonstrate the complete MVP.
+
+These phases describe logical dependencies, not fixed deadlines or confirmed sprint assignments.
+
+### Future Possibilities
+
+Subject to requirements and team decisions:
+
+- Email invoice intake
+- More advanced extraction methods
+- Automated approval policies
+- Real payment-provider integrations
+- Broader property-management functionality
+- Reporting and analytics
+
+## 12. AI Usage Policy
+
+The cohort prohibits AI-generated implementation code during the initial two-week restriction period beginning October 12, 2026.
+
+During this period, use AI only for activities permitted by the cohort organizers, such as:
+
+- Planning
+- Documentation
+- Architecture discussion
+- Conceptual learning
+- Test planning
+- Debugging guidance
+
+Do not use AI coding agents to bypass implementation restrictions.
+
+After the initial restriction period, confirm current guidance with the cohort organizers before changing development practices.
+
+Official guidance should take precedence over this README.
+
+## 13. Project Resources
+
+| Resource | Link |
+|---|---|
+| Jira Board | [Team 5 — DC](https://one-atlas-duuf.atlassian.net/jira/software/projects/DC/boards/178) |
+| GitHub | [Works on My Machine](https://github.com/dallassoftwaredevelopers/cohort-team-2026-works-on-my-machine) |
+| Miro | [Active Collaboration Board](https://miro.com/app/board/uXjVEZO0WzY=/?share_link_id=39161681318) |
+| Team Decisions | [Discord Decisions](https://discord.com/channels/739845668582981683/1559970772657774592) |
+| Official CYC Communications | [Discord Official Guidance](https://discord.com/channels/739845668582981683/1559969504581255198) |
+| Meeting Notes | [Discord Notes](https://discord.com/channels/739845668582981683/1559392975920828547) |
+| MVP Epic | [DC-49](https://one-atlas-duuf.atlassian.net/browse/DC-49) |
+| User Stories | [DC-14](https://one-atlas-duuf.atlassian.net/browse/DC-14) |
+| Integration Testing | [DC-65](https://one-atlas-duuf.atlassian.net/browse/DC-65) |
+
+### Deployed Application
+
+https://cohort-team-2026-works-on-my-machin.vercel.app/
+
+This is the known frontend deployment URL. Its current functionality and integration health must be verified through testing.
+
+## 14. Contributing
+
+We welcome contributions from all seven team members.
+
+1. Find a Ready Jira issue.
+2. Confirm ownership and dependencies.
+3. Create a focused feature branch.
+4. Implement the change under current cohort policies.
+5. Test the relevant behavior.
+6. Open a pull request linked to Jira.
+7. Request teammate review.
+8. Address feedback.
+9. Merge only after the required approval and checks.
+10. Update Jira with results and evidence.
+
+For blockers, communicate early so teammates can help.
+
+## 15. License
+
+To be determined by repository owners or cohort organizers.
+
+---
+
+**Team 5 — Works on My Machine**
+
+*Coordinate clearly. Build small. Test thoroughly. Iterate continuously.*
+
+**Commit your code.**
