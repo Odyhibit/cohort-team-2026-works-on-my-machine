@@ -1,6 +1,7 @@
+
 # Works on My Machine — MVP API Contract
 
-**Version:** 0.1 (Draft)  
+**Version:** 1.0 (Draft)  
 **Date:** October 24, 2026  
 **Team:** CYC Cohort, Team 5  
 **Jira:** DC-18  
@@ -8,67 +9,75 @@
 
 ## 1. Overview
 
-This document defines the proposed API interfaces between the frontend and backend for the MVP invoice workflow.
+This document defines the proposed API interfaces between the frontend and backend for manual invoice entry.
 
 The implementation will build on the existing Next.js, CoreUI, and Supabase infrastructure, reusing available components wherever possible.
 
-**Workflow:** Upload PDF → Extract → Review/Correct → Approve/Reject → Save/Retrieve
+**Workflow:** Select Vendor → Select Property → Enter Reference Number → Enter Invoice Date → Enter Amount → Enter Due Date → Submit → Save Invoice
+
+Invoice creation is separate from approval, rejection, and EasyPay.
 
 ## 2. API Endpoints
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| POST | `/api/uploads` | Upload PDF to Supabase Storage |
-| POST | `/api/uploads/{id}/extract` | Extract invoice details |
-| POST | `/api/invoices` | Save reviewed invoice and decision |
+| GET | `/api/vendors` | Populate the vendor combobox (DC-90) |
+| GET | `/api/properties` | Populate the property combobox (DC-91) |
+| POST | `/api/invoices` | Validate and save invoice (DC-92) |
 | GET | `/api/invoices/{id}` | Retrieve saved invoice |
+
+The three backend functions are `getAllVendors()`, `getAllProperties()`, and `createInvoice()`.
+
+These endpoints are proposed and subject to team review.
 
 ## 3. API Conventions
 
-- **Format:** JSON; `multipart/form-data` for uploads
+- **Format:** JSON
 - **Authentication:** Existing application authentication
 - **Identifiers:** UUID
 - **Dates:** `YYYY-MM-DD`
 - **Success responses:** `200 OK`, `201 Created`
+- **Money:** USD
 - **Error responses:** Standard HTTP status codes with consistent JSON error objects
+- **Security:** Authenticate requests and authorize actions
 
 ## 4. Request and Response Formats
 
-### Upload Invoice
+### Get Vendors
 
-`POST /api/uploads`
-
-**Request:** PDF file using `multipart/form-data`.
-
-**Response: 201 Created**
-
-```json
-{
-  "upload_id": "550e8400-e29b-41d4-a716-446655440000",
-  "file_path": "invoices/550e8400-e29b-41d4-a716-446655440000/invoice.pdf"
-}
-```
-
-### Extract Invoice Details
-
-`POST /api/uploads/{id}/extract`
-
-**Request:** Upload ID in the URL. No request body.
+`GET /api/vendors`
 
 **Response: 200 OK**
 
 ```json
-{
-  "vendor": "ABC Plumbing",
-  "invoice_number": "INV-123",
-  "amount": 425.00,
-  "due_date": "2026-11-15"
-}
+[
+  {
+    "id": "e7b20ed1-cbe0-49b1-95eb-d604e56d7fd0",
+    "name": "ABC Plumbing"
+  }
+]
 ```
 
-Missing or uncertain values return `null` for manual correction.
+Returns available vendors to populate the Vendor combobox.
 
-### Save Reviewed Invoice
+### Get Properties
+
+`GET /api/properties`
+
+**Response: 200 OK**
+
+```json
+[
+  {
+    "id": "c262217a-6b64-4f4a-ade4-23e26d94ec06",
+    "name": "Example Property"
+  }
+]
+```
+
+Returns available properties to populate the Property combobox.
+
+### Save Invoice
 
 `POST /api/invoices`
 
@@ -76,12 +85,12 @@ Missing or uncertain values return `null` for manual correction.
 
 ```json
 {
-  "upload_id": "550e8400-e29b-41d4-a716-446655440000",
-  "vendor": "ABC Plumbing",
-  "invoice_number": "INV-123",
+  "vendor_id": "e7b20ed1-cbe0-49b1-95eb-d604e56d7fd0",
+  "property_id": "c262217a-6b64-4f4a-ade4-23e26d94ec06",
+  "reference_number": "INV-123",
+  "date": "2026-10-24",
   "amount": 425.00,
-  "due_date": "2026-11-15",
-  "decision": "approved"
+  "due_date": "2026-11-15"
 }
 ```
 
@@ -90,11 +99,15 @@ Missing or uncertain values return `null` for manual correction.
 ```json
 {
   "id": "a1b2c3d4-e5f6-4789-a123-b45678901234",
-  "status": "approved"
+  "status": "pending"
 }
 ```
 
-The decision is submitted only after explicit human review. Both approved and rejected invoices are retained.
+The backend checks the required fields, validates the vendor and property selections, and saves the invoice to Supabase.
+
+Once saved, the frontend should display a confirmation message.
+
+New invoices are saved with a `pending` status. Approval and payment are handled separately.
 
 ### Retrieve Invoice
 
@@ -105,21 +118,29 @@ The decision is submitted only after explicit human review. Both approved and re
 ```json
 {
   "id": "a1b2c3d4-e5f6-4789-a123-b45678901234",
-  "vendor": "ABC Plumbing",
-  "invoice_number": "INV-123",
+  "vendor_id": "e7b20ed1-cbe0-49b1-95eb-d604e56d7fd0",
+  "property_id": "c262217a-6b64-4f4a-ade4-23e26d94ec06",
+  "reference_number": "INV-123",
+  "date": "2026-10-24",
   "amount": 425.00,
   "due_date": "2026-11-15",
-  "status": "approved"
+  "status": "pending"
 }
 ```
 
+Returns the saved invoice using its ID. This allows the frontend to confirm the invoice was saved and retrieve it later.
+
 ## 5. Validation and Error Handling
 
-- Accept one supported PDF per upload.
-- Validate the four extracted invoice fields.
-- Require human review before approval or rejection.
-- Store corrected values rather than unverified extraction results.
-- Preserve rejected invoices for later retrieval.
+- Require a vendor and property selection.
+- Require a reference number, invoice date, and amount.
+- Due date is optional.
+- Validate IDs, dates, and monetary amounts before saving.
+- Confirm the selected vendor and property exist and are accessible.
+- Save new invoices with status `pending`.
+- Display a confirmation after a successful save.
+- Show appropriate errors for missing fields or failed submissions.
+- Keep entered information available if saving fails.
 - Enforce authentication and authorization server-side.
 
 **Standard error response:**
@@ -133,26 +154,34 @@ The decision is submitted only after explicit human review. Both approved and re
 }
 ```
 
-Relevant status codes: `400`, `401`, `403`, `404`, `409`, `413`, `415`, `422`, `500`.
+Relevant status codes: `400`, `401`, `403`, `404`, `422`, `500`.
 
 ## 6. Integration Dependencies
 
-**PDF Storage:** Supabase Storage is confirmed for original uploaded PDFs.
+**Database:** The current schema requires `date`, `reference_number`, `vendor_id`, `property_id`, and `amount`.
 
-**Database:** Josh's current schema requires `date`, `reference_number`, `vendor_id`, `property_id`, and `amount`. The backend implementation must resolve these fields before persisting the invoice.
+**Manual Entry:** DC-90 (`getAllVendors()`), DC-91 (`getAllProperties()`), and DC-92 (`createInvoice()`) support the manual entry form.
 
-**PDF Reference:** The saved invoice must retain a reference to the original uploaded document.
+**Authorization:** Requests must follow the application's authentication and Supabase security policies. Database permissions should be reviewed before using real data.
 
-**Authorization:** The API must enforce decision permissions consistently with the Supabase security policies.
-
-**Implementation:** Next.js route handlers and direct Supabase operations can be used as appropriate, provided the agreed request and response contracts remain consistent.
+**Implementation:** Next.js route handlers or appropriate Supabase operations can be used, provided the agreed request and response formats remain consistent.
 
 ## 7. Next Steps
 
-Review the proposed interfaces with the frontend and backend teams, align the invoice data model under DC-15, and validate the complete workflow using one fictional invoice.
+Review the proposed interfaces with the frontend and backend teams, confirm the field mappings against DC-15, and test the manual entry workflow using one fictional invoice.
 
-The priority is a working end-to-end implementation using the components and infrastructure already available.
+Confirm that:
+
+- DC-90 populates the Vendor combobox.
+- DC-91 populates the Property combobox.
+- DC-92 validates and saves the completed invoice.
+- The frontend displays a successful save confirmation.
+- Missing or invalid fields display an appropriate error.
+- A saved invoice can be retrieved by ID.
+- Approval and EasyPay remain separate from invoice creation.
+
+The priority is getting the manual entry form connected and saving invoices using the existing infrastructure.
 
 ---
 
-*Draft for team review. Subject to the project's approved requirements and technical decisions.*
+*Draft for team review.*
