@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,11 +15,11 @@ async function getAllProperties(): Promise<Property[]> {
   return data ?? [];
 }
 
-export default function propertySelect() {
-  const [property, setProperties] = useState<Property[]>([]);
+export default function PropertySelect() {
+  const [properties, setProperties] = useState<Property[]>([]);
 
   useEffect(() => {
-    getAllProperties().then(setProperty).catch(console.error);
+    getAllProperties().then(setProperties).catch(console.error);
   }, []);
 
   return (
