@@ -1,66 +1,22 @@
-"use client";
-
-import { useEffect, useState } from "react";
+// Reference pattern: fetch in a Server Component with the server Supabase client,
+// then pass the data to a small client component only for interactivity.
 import Link from "next/link";
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/server";
+import PropertySelect from "./PropertySelect.client";
 
-type Property = { id: string; name: string };
+export default async function PropertiesTestPage() {
+  const supabase = await createClient();
 
-async function getAllProperties(): Promise<Property[]> {
-  const { data, error } = await createClient()
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) {
+    return <p><Link href="/properties">Sign in to view properties</Link></p>;
+  }
+
+  const { data: properties, error } = await supabase
     .from("properties")
     .select("id, name")
     .order("name");
-
   if (error) throw error;
-  return data ?? [];
-}
 
-export default function PropertySelect() {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [needsSignIn, setNeedsSignIn] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadProperties() {
-      const { data, error } = await createClient().auth.getUser();
-      if (!active) return;
-      if (error && error.name !== "AuthSessionMissingError") {
-        console.error(error);
-        return;
-      }
-      if (!data.user) {
-        setNeedsSignIn(true);
-        return;
-      }
-
-      try {
-        const result = await getAllProperties();
-        if (active) setProperties(result);
-      } catch (loadError) {
-        console.error(loadError);
-      }
-    }
-
-    void loadProperties();
-    return () => { active = false; };
-  }, []);
-
-  return (
-    <>
-      {needsSignIn ? (
-        <p><Link href="/properties">Sign in to view properties</Link></p>
-      ) : (
-        <select name="property_id" defaultValue="" onChange={(e) => console.log(e.target.value)}>
-          <option value="" disabled>Choose a property</option>
-          {properties.map((property) => (
-            <option key={property.id} value={property.id}>
-              {property.name}
-            </option>
-          ))}
-        </select>
-      )}
-    </>
-  );
+  return <PropertySelect properties={properties ?? []} />;
 }
