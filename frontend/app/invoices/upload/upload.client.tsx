@@ -23,10 +23,59 @@ export function UploaderClient() {
   const [decision, setDecision] = useState<"approved" | "rejected" | null>(
     null,
   );
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
 
   const setField =
     (key: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement>) =>
       setFields((prev) => ({ ...prev, [key]: e.target.value }));
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    setFileName(file?.name ?? "");
+    setDecision(null);
+    setValidated(false);
+    setExtractError(null);
+    setFields({
+      vendorName: "",
+      invoiceNumber: "",
+      amountDue: "",
+      dueDate: "",
+    });
+
+    if (!file) return;
+
+    setIsExtracting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/invoices/extract", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Extraction failed: HTTP ${response.status}`);
+      }
+
+      const invoice = await response.json();
+
+      setFields({
+        vendorName: invoice.vendorName ?? "",
+        invoiceNumber: invoice.invoiceNumber ?? "",
+        amountDue: invoice.amountDue ?? "",
+        dueDate: invoice.dueDate ?? "",
+      });
+    } catch (error) {
+      console.error("PDF extraction failed:", error);
+      setExtractError("Could not extract invoice details. Please try again.");
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   const handleApprove = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -69,9 +118,18 @@ export function UploaderClient() {
           id="invoicePdf"
           label="Invoice PDF"
           feedbackInvalid="Please choose a PDF file."
-          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")}
+          onChange={handleFileChange}
         />
         {fileName && <p className="mt-2 mb-0 small">Selected: {fileName}</p>}
+        {isExtracting && (
+          <p className="mt-2 mb-0">Extracting invoice details...</p>
+        )}
+
+        {extractError && (
+          <CAlert color="danger" className="mt-2 mb-0">
+            {extractError}
+          </CAlert>
+        )}
       </section>
 
       <h3 className="h5 mb-3">Invoice Details</h3>
@@ -131,7 +189,7 @@ export function UploaderClient() {
         >
           Reject
         </CButton>
-        <CButton color="primary" type="submit">
+        <CButton color="primary" type="submit" disabled={isExtracting}>
           Approve Invoice
         </CButton>
       </div>
