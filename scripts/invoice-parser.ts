@@ -6,8 +6,7 @@ export type InvoiceDetails = {
   paymentUrl: string | null;
 };
 
-// Add new label spellings here as more invoice formats arrive. These patterns
-// inspect the text immediately before a value, including across line breaks.
+// Add new label spellings here as more invoice formats arrive.
 const AMOUNT_DUE_LABELS = [
   /\b(?:total amount due|amount to pay|balance to remit|outstanding balance|net to remit|balance outstanding|balance due|still to pay|net payable|net amount payable|amount due|please pay)\s*:?\s*$/i,
 ];
@@ -54,7 +53,6 @@ function extractAmountDue(text: string): string | null {
   const amounts = [...text.matchAll(/\$\s*([\d,]+(?:\.\d{2})?)/g)];
 
   for (const labels of [AMOUNT_DUE_LABELS, AMOUNT_FALLBACK_LABELS]) {
-    // An invoice total is only a safe fallback when no payments are mentioned.
     if (labels === AMOUNT_FALLBACK_LABELS && /\b(?:payments?|paid|credits?)\b/i.test(text)) break;
 
     for (const match of amounts) {
@@ -93,8 +91,6 @@ function extractDueDate(text: string): string | null {
 }
 
 function extractInvoiceNumber(text: string): string | null {
-  // The examples repeat the reference near payment instructions. Taking its
-  // first occurrence favors the identifier near the top of the invoice.
   for (const pattern of INVOICE_NUMBER_PATTERNS) {
     const match = text.match(pattern);
     if (match) return match[0].replace(/\s+/, "-");
