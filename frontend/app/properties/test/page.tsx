@@ -20,7 +20,7 @@ export default function propertySelect() {
   const [property, setProperties] = useState<Property[]>([]);
 
   useEffect(() => {
-    getAllPropertiess().then(setProperty).catch(console.error);
+    getAllProperties().then(setProperty).catch(console.error);
   }, []);
 
   return (
