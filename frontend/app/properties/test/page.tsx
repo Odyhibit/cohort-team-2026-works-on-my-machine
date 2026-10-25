@@ -4,11 +4,11 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
-type Vendor = { id: string; name: string };
+type Property = { id: string; name: string };
 
-async function getAllVendors(): Promise<Vendor[]> {
+async function getAllProperties(): Promise<Property[]> {
   const { data, error } = await createClient()
-    .from("vendors")
+    .from("properties")
     .select("id, name")
     .order("name");
 
@@ -16,19 +16,19 @@ async function getAllVendors(): Promise<Vendor[]> {
   return data ?? [];
 }
 
-export default function VendorSelect() {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+export default function propertySelect() {
+  const [property, setProperties] = useState<Property[]>([]);
 
   useEffect(() => {
-    getAllVendors().then(setVendors).catch(console.error);
+    getAllProperties().then(setProperty).catch(console.error);
   }, []);
 
   return (
-    <select name="vendor_id" defaultValue="" onChange={(e) => console.log(e.target.value)}>
-      <option value="" disabled>Choose a vendor</option>
-      {vendors.map((vendor) => (
-        <option key={vendor.id} value={vendor.id}>
-          {vendor.name}
+    <select name="property_id" defaultValue="" onChange={(e) => console.log(e.target.value)}>
+      <option value="" disabled>Choose a property</option>
+      {properties.map((property) => (
+        <option key={property.id} value={property.id}>
+          {property.name}
         </option>
       ))}
     </select>
