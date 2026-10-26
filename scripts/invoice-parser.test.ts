@@ -2,8 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
-import { PDFParse } from "pdf-parse";
-import { parseInvoice } from "./invoice-parser";
+import { extractInvoiceFromPdf } from "../frontend/app/invoices/upload/extract-invoice";
 
 const examples = [
   ["alder-creek", "Alder Creek Landscaping", "186.42"],
@@ -21,10 +20,7 @@ const examples = [
 for (const [filename, vendorName, amountDue] of examples) {
   test(`${filename} invoice`, async () => {
     const data = await readFile(join(__dirname, `${filename}-bill.pdf`));
-    const parser = new PDFParse({ data });
-    const { text } = await parser.getText();
-
-    assert.deepEqual(parseInvoice(text), {
+    assert.deepEqual(await extractInvoiceFromPdf(data), {
       vendorName,
       invoiceNumber: "BILL-1001",
       amountDue,
