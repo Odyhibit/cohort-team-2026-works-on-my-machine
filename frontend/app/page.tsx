@@ -13,6 +13,9 @@ export default function Home() {
       <Link href="/properties" className="btn btn-primary">
         Manage Properties
       </Link>
+      <Link href="/vendors" className="btn btn-primary">
+        Manage Vendors
+      </Link>
       <Link href="/reset-password" className="btn btn-primary">
         Reset Password
       </Link>
