@@ -5,29 +5,30 @@ export default function Navbar() {
         <header>
             <nav className="navbar-container" role="navigation" aria-label="main-navigation">
                 <div>
-                    <a href="#">
-                        <img src="null" alt="home logo" />
-                    </a>
+                    <Link href="/">Bill Payments</Link>
             </div>
             <div className="menu">
                 <ul>
                     <li>
-                        <a href="/">Home</a>
+                        <Link href="/">Home</Link>
                     </li>
                      <li>
-                        <a href="/">Invoices</a>
+                        <Link href="/invoices">Invoices</Link>
                     </li>
                      <li>
-                        <a href="/">Users</a>
+                        <Link href="/">Users</Link>
                     </li>
                      <li>
-                        <a href="/">Properties</a>
+                        <Link href="/properties">Properties</Link>
                     </li>
                     <li>
-                        <a href="/">payments</a>
+                        <Link href="/vendors">Vendors</Link>
                     </li>
                     <li>
-                        <a href="/">Reports</a>
+                        <Link href="/">payments</Link>
+                    </li>
+                    <li>
+                        <Link href="/">Reports</Link>
                     </li>
                 </ul>
             </div>
@@ -36,12 +37,6 @@ export default function Navbar() {
                     Book a free demo
                 </button>
                 <a href="">Contact</a>
-                <div className="navbar-mobile" aria-label="toggle-menu">
-                    <button className="mobileBtn">
-                            <img className="icon-open" src="null" alt="icon open"/>
-                            <img className="icon-close" src="null" alt="icon close"/>
-                    </button>
-                </div>
             </div>
         </nav>
 </header>
