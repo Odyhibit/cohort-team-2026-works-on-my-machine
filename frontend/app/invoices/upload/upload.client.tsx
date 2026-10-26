@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
 import { createClient } from "@/utils/supabase/client";
+import type { InvoiceDetails } from "./invoice-parser";
 import styles from "./upload.module.scss";
 
 type Option = { id: string; name: string };
@@ -45,12 +46,13 @@ export function UploaderClient() {
   const [optionsError, setOptionsError] = useState("");
   const [needsSignIn, setNeedsSignIn] = useState(false);
   const [fields, setFields] = useState<Fields>(initialFields);
-  const [fileName, setFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewType, setPreviewType] = useState("");
+  const [extracting, setExtracting] = useState(false);
   const [validated, setValidated] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [notification, setNotification] = useState<{ color: "danger" | "success"; message: string } | null>(null);
+  const [notification, setNotification] = useState<{ color: "danger" | "info" | "success"; message: string } | null>(null);
 
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
@@ -101,6 +103,53 @@ export function UploaderClient() {
   const setField =
     (key: Exclude<keyof Fields, "status">) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setFields((prev) => ({ ...prev, [key]: e.target.value }));
+
+  async function extractDetails() {
+    if (!selectedFile || extracting) return;
+    if (selectedFile.size > 4 * 1024 * 1024) {
+      setNotification({ color: "danger", message: "Choose a PDF smaller than 4 MB for extraction." });
+      return;
+    }
+    setExtracting(true);
+    setNotification(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      const response = await fetch("/invoices/upload/extract", { method: "POST", body: formData });
+      const result = await response.json().catch(() => ({})) as { details?: InvoiceDetails; error?: string };
+      if (!response.ok || !result.details) {
+        throw new Error(result.error ?? "Could not extract invoice details.");
+      }
+
+      const details = result.details;
+      const normalizedName = details.vendorName?.trim().replace(/\s+/g, " ").toLowerCase();
+      const matches = normalizedName
+        ? vendors.filter((vendor) => vendor.name.trim().replace(/\s+/g, " ").toLowerCase() === normalizedName)
+        : [];
+      setFields((prev) => ({
+        ...prev,
+        vendorId: matches.length === 1 ? matches[0].id : "",
+        invoiceNumber: details.invoiceNumber ?? "",
+        amountDue: details.amountDue ?? "",
+        dueDate: details.dueDate ?? "",
+        paymentUrl: details.paymentUrl ?? "",
+      }));
+      setNotification({
+        color: "info",
+        message: matches.length === 1
+          ? "Details extracted. Review every field and choose a property before saving."
+          : `Details extracted. ${details.vendorName ? `No unique vendor match for “${details.vendorName}”.` : "Vendor not found in the PDF."} Choose a vendor and property before saving.`,
+      });
+    } catch (error) {
+      setNotification({
+        color: "danger",
+        message: error instanceof Error ? error.message : "Could not extract invoice details.",
+      });
+    } finally {
+      setExtracting(false);
+    }
+  }
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -169,18 +218,31 @@ export function UploaderClient() {
           accept=".pdf,image/*"
           id="invoiceFile"
           label="Invoice PDF or image (optional)"
+          disabled={extracting}
           onChange={(e) => {
             const file = e.target.files?.[0];
-            setFileName(file?.name ?? "");
+            setSelectedFile(file ?? null);
             setPreviewType(file?.type ?? "");
             setPreviewUrl(file ? URL.createObjectURL(file) : "");
+            setNotification(null);
           }}
         />
-        {fileName && <p className="mt-2 mb-0 small">Selected: {fileName}</p>}
+        {selectedFile && <p className="mt-2 mb-0 small">Selected: {selectedFile.name}</p>}
         {previewUrl && (
           <object className={styles.preview} data={previewUrl} type={previewType} aria-label="Selected invoice preview">
             <a href={previewUrl} target="_blank" rel="noreferrer">Open invoice preview</a>
           </object>
+        )}
+        {selectedFile && (selectedFile.type === "application/pdf" || /\.pdf$/i.test(selectedFile.name)) && (
+          <CButton
+            className="mt-3"
+            color="secondary"
+            type="button"
+            disabled={extracting || loadingOptions || needsSignIn || !!optionsError}
+            onClick={() => void extractDetails()}
+          >
+            {extracting ? "Extracting…" : "Extract details from PDF"}
+          </CButton>
         )}
         <p className="mt-2 mb-0 small text-body-secondary">Preview only. The file is not saved with the invoice.</p>
       </section>
@@ -295,7 +357,7 @@ export function UploaderClient() {
       </CFormSelect>
 
       <div className={styles.actions}>
-        <CButton color="primary" type="submit" disabled={saving || loadingOptions || needsSignIn || !!optionsError || vendors.length === 0 || properties.length === 0}>
+        <CButton color="primary" type="submit" disabled={saving || extracting || loadingOptions || needsSignIn || !!optionsError || vendors.length === 0 || properties.length === 0}>
           {saving ? "Saving…" : "Save Invoice"}
         </CButton>
       </div>
