@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import { PDFParse } from "pdf-parse";
-import { parseInvoice } from "./invoice-parser";
+import { parseInvoice } from "../frontend/lib/invoice-parser";
 
 const examples = [
   ["alder-creek", "Alder Creek Landscaping", "186.42"],

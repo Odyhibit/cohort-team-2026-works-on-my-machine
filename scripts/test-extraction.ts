@@ -1,6 +1,6 @@
 import { PDFParse } from "pdf-parse";
 import { readFile } from "node:fs/promises";
-import { parseInvoice } from "./invoice-parser";
+import { parseInvoice } from "../frontend/lib/invoice-parser";
 
 async function run() {
   const filename = process.argv[2];

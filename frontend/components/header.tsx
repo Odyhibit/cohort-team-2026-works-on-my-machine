@@ -12,22 +12,22 @@ export default function Navbar() {
             <div className="menu">
                 <ul>
                     <li>
-                        <a href="/">Home</a>
+                        <Link href="/">Home</Link>
                     </li>
                      <li>
-                        <a href="/">Invoices</a>
+                        <Link href="/">Invoices</Link>
                     </li>
                      <li>
-                        <a href="/">Users</a>
+                        <Link href="/">Users</Link>
                     </li>
                      <li>
-                        <a href="/">Properties</a>
+                        <Link href="/">Properties</Link>
                     </li>
                     <li>
-                        <a href="/">payments</a>
+                        <Link href="/">payments</Link>
                     </li>
                     <li>
-                        <a href="/">Reports</a>
+                        <Link href="/">Reports</Link>
                     </li>
                 </ul>
             </div>
