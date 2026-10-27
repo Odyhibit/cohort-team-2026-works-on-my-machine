@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
 import { createClient } from "@/utils/supabase/client";
-import type { InvoiceDetails } from "./invoice-parser";
+import type { InvoiceDetails } from "@/lib/invoices/invoice-parser";
 import styles from "./upload.module.scss";
 
 type Option = { id: string; name: string };

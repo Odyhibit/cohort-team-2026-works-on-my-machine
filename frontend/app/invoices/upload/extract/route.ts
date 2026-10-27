@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { extractInvoiceFromPdf } from "../extract-invoice";
+import { extractInvoiceFromPdf } from "@/lib/invoices/extract-invoice";
 
 const MAX_PDF_BYTES = 4 * 1024 * 1024;
 

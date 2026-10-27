@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import tsx --test \"lib/**/*.test.ts\""
   },
   "dependencies": {
     "@coreui/coreui": "^5.9.1",
@@ -26,6 +27,7 @@
     "eslint-config-next": "16.4.2",
     "sass": "^1.105.2",
     "supabase": "^2.121.0",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
