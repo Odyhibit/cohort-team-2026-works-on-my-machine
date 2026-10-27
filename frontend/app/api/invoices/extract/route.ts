@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFParse } from "pdf-parse";
-import { parseInvoice } from "../../../../../scripts/invoice-parser";
+import { parseInvoice } from "@/lib/invoice-parser";
 
 export async function POST(request: NextRequest) {
   try {
