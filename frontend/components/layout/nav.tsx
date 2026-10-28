@@ -31,7 +31,7 @@ const nav: NavEntry[] = [
     name: "Users",
     icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
     items: [
-      { component: CNavItem, name: "Create User", to: "/signup", icon: <CIcon icon={cilUserPlus} customClassName="nav-icon" /> },
+      { component: CNavItem, name: "Create User", to: "/create-user", icon: <CIcon icon={cilUserPlus} customClassName="nav-icon" /> },
     ],
   },
 ];
@@ -43,6 +43,6 @@ export const routeNames: Record<string, string> = {
   "/invoices": "Invoices",
   "/invoices/upload": "Upload Invoice",
   "/properties": "Properties",
-  "/signup": "Create User",
+  "/create-user": "Create User",
   "/reset-password": "Reset Password",
 };
