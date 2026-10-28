@@ -251,7 +251,7 @@ export function UploaderClient() {
 
       {needsSignIn && (
         <CAlert color="warning">
-          <Link href="/properties">Sign in</Link> to choose a vendor and property.
+          <Link href="/login?next=/invoices/upload">Sign in</Link> to choose a vendor and property.
         </CAlert>
       )}
       {optionsError && <CAlert color="danger" role="alert">Could not load vendors and properties: {optionsError}</CAlert>}

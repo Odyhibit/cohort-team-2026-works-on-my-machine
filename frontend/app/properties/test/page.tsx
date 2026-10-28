@@ -9,7 +9,7 @@ export default async function PropertiesTestPage() {
 
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) {
-    return <p><Link href="/properties">Sign in to view properties</Link></p>;
+    return <p><Link href="/login?next=/properties/test">Sign in to view properties</Link></p>;
   }
 
   const { data: properties, error } = await supabase

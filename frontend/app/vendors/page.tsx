@@ -176,9 +176,6 @@ export default function VendorsPage() {
             <input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} />
           </label>
           <button type="submit" disabled={busy} className={primaryButtonClass}>{busy ? "Signing in…" : "Sign in"}</button>
-          <p className="mb-0 text-body-secondary">
-            New here? <Link href="/signup">Create an account</Link>
-          </p>
           <p className="mb-0"><Link href="/reset-password">Forgot your password?</Link></p>
         </form>
       ) : (

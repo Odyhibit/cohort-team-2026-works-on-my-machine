@@ -113,7 +113,7 @@ export default function ResetPasswordPage() {
           <button type="submit" disabled={busy} className="btn btn-primary">
             {busy ? "Sending…" : "Send reset link"}
           </button>
-          <Link href="/properties">Back to sign in</Link>
+          <Link href="/login">Back to sign in</Link>
         </form>
       )}
     </div>
