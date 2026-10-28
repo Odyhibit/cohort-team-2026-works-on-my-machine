@@ -4,8 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
 import type { InvoiceDetails } from "@/lib/invoices/invoice-parser";
 import { invoiceStatuses, invoiceStatusLabels, type InvoiceStatus } from "@/lib/invoices/status";
-import { createInvoice, type InvoiceInput } from "./actions";
-import styles from "./upload.module.scss";
+import { createInvoice, updateInvoice, type InvoiceInput } from "./upload/actions";
+import styles from "./upload/upload.module.scss";
 
 type Option = { id: string; name: string };
 type Fields = Omit<InvoiceInput, "date">;
@@ -38,8 +38,12 @@ function localDate() {
   return `${year}-${month}-${day}`;
 }
 
-export function UploaderClient({ vendors, properties }: { vendors: Option[]; properties: Option[] }) {
-  const [fields, setFields] = useState<Fields>(initialFields);
+export function InvoiceFormClient({ vendors, properties, invoice }: {
+  vendors: Option[];
+  properties: Option[];
+  invoice?: { id: string; fields: Fields };
+}) {
+  const [fields, setFields] = useState<Fields>(invoice?.fields ?? initialFields);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewType, setPreviewType] = useState("");
@@ -113,12 +117,14 @@ export function UploaderClient({ vendors, properties }: { vendors: Option[]; pro
 
     startSaving(async () => {
       try {
-        const result = await createInvoice({ ...fields, date: localDate() });
+        const result = invoice
+          ? await updateInvoice(invoice.id, fields)
+          : await createInvoice({ ...fields, date: localDate() });
         if (result) {
           setNotification({ color: "danger", message: result.error });
         } else {
-          setNotification({ color: "success", message: "Invoice saved." });
-          setFields(initialFields);
+          setNotification({ color: "success", message: invoice ? "Invoice updated." : "Invoice saved." });
+          if (!invoice) setFields(initialFields);
           setValidated(false);
         }
       } catch (error) {
@@ -290,7 +296,7 @@ export function UploaderClient({ vendors, properties }: { vendors: Option[]; pro
 
       <div className={styles.actions}>
         <CButton color="primary" type="submit" disabled={saving || extracting || vendors.length === 0 || properties.length === 0}>
-          {saving ? "Saving…" : "Save Invoice"}
+          {saving ? "Saving…" : invoice ? "Save Changes" : "Save Invoice"}
         </CButton>
       </div>
 
