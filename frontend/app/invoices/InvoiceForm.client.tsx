@@ -138,7 +138,7 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
 
   return (
     <CForm noValidate validated={validated} onSubmit={handleSave}>
-      <section className={styles.dropzone}>
+      {!invoice && <section className={styles.dropzone}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           aria-hidden="true"
@@ -190,7 +190,7 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
           </CButton>
         )}
         <p className="mt-2 mb-0 small text-body-secondary">Preview only. The file is not saved with the invoice.</p>
-      </section>
+      </section>}
 
       <h3 className="h5 mb-3">Invoice Details</h3>
 
