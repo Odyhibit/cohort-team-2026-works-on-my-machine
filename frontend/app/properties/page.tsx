@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import { signOut } from "./actions";
+import DeleteButton from "@/components/DeleteButton.client";
+import { signOut } from "@/app/login/actions";
+import { deleteProperty } from "./actions";
 import PropertyForm from "./PropertyForm.client";
-import DeletePropertyButton from "./DeletePropertyButton.client";
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -57,7 +58,7 @@ export default async function PropertiesPage({ searchParams }: Props) {
                 </div>
                 <div className="d-flex align-items-center gap-2">
                   <Link href={{ pathname: "/properties", query: { edit: property.id } }} className="btn btn-outline-secondary">Edit</Link>
-                  <DeletePropertyButton id={property.id} name={property.name} />
+                  <DeleteButton action={deleteProperty} id={property.id} name={property.name} />
                 </div>
               </li>)}
             </ul>

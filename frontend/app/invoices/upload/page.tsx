@@ -1,9 +1,23 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CCard, CCardBody, CCardHeader } from "@coreui/react";
+import { createClient } from "@/utils/supabase/server";
 import { UploaderClient } from "./upload.client";
 import styles from "./upload.module.scss";
 
-export default function Page() {
+export default async function Page() {
+  const supabase = await createClient();
+  const { data, error: authError } = await supabase.auth.getClaims();
+  if (authError && authError.name !== "AuthSessionMissingError") throw authError;
+  if (!data?.claims) redirect("/login?next=/invoices/upload");
+
+  const [vendorResult, propertyResult] = await Promise.all([
+    supabase.from("vendors").select("id, name").order("name"),
+    supabase.from("properties").select("id, name").order("name"),
+  ]);
+  if (vendorResult.error) throw vendorResult.error;
+  if (propertyResult.error) throw propertyResult.error;
+
   return (
     <CCard className={styles.uploader}>
       <CCardHeader className="d-flex justify-content-between align-items-start gap-3">
@@ -18,7 +32,7 @@ export default function Page() {
         </Link>
       </CCardHeader>
       <CCardBody>
-        <UploaderClient />
+        <UploaderClient vendors={vendorResult.data} properties={propertyResult.data} />
       </CCardBody>
     </CCard>
   );

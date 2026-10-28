@@ -6,14 +6,6 @@ import { createClient } from "@/utils/supabase/server";
 
 export type FormState = { error: string; values?: Record<string, string> } | undefined;
 
-export async function signOut() {
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
-
-  redirect("/login");
-}
-
 export async function saveProperty(_prev: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient();
 

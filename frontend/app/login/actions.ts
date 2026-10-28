@@ -16,3 +16,11 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
 
   redirect(redirectTarget(formData.get("next")));
 }
+
+export async function signOut() {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+
+  redirect("/login");
+}
