@@ -8,9 +8,9 @@ export default function Page() {
     <CCard className={styles.uploader}>
       <CCardHeader className="d-flex justify-content-between align-items-start gap-3">
         <div>
-          <h1 className="h3 mb-1">Invoice Review</h1>
+          <h1 className="h3 mb-1">New Invoice</h1>
           <p className="mb-0 text-body-secondary">
-            Upload an invoice and review its details.
+            Preview an invoice file and enter its details.
           </p>
         </div>
         <Link href="/invoices" className="btn btn-primary">

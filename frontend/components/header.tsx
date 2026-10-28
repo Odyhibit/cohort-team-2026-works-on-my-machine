@@ -5,9 +5,7 @@ export default function Navbar() {
         <header>
             <nav className="navbar-container" role="navigation" aria-label="main-navigation">
                 <div>
-                    <a href="#">
-                        <img src="null" alt="home logo" />
-                    </a>
+                    <Link href="/">Bill Payments</Link>
             </div>
             <div className="menu">
                 <ul>
@@ -15,13 +13,16 @@ export default function Navbar() {
                         <Link href="/">Home</Link>
                     </li>
                      <li>
-                        <Link href="/">Invoices</Link>
+                        <Link href="/invoices">Invoices</Link>
                     </li>
                      <li>
                         <Link href="/">Users</Link>
                     </li>
                      <li>
-                        <Link href="/">Properties</Link>
+                        <Link href="/properties">Properties</Link>
+                    </li>
+                    <li>
+                        <Link href="/vendors">Vendors</Link>
                     </li>
                     <li>
                         <Link href="/">payments</Link>
@@ -36,12 +37,6 @@ export default function Navbar() {
                     Book a free demo
                 </button>
                 <a href="">Contact</a>
-                <div className="navbar-mobile" aria-label="toggle-menu">
-                    <button className="mobileBtn">
-                            <img className="icon-open" src="null" alt="icon open"/>
-                            <img className="icon-close" src="null" alt="icon close"/>
-                    </button>
-                </div>
             </div>
         </nav>
 </header>
