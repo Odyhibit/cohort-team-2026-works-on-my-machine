@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../styles/main.scss";
-import Navbar from "../components/header";
+import AppShell from "../components/layout/AppShell.client";
+import AccountMenu from "../components/layout/AccountMenu";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,11 +26,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body>
-        <Navbar />
-        <main className="container py-4">{children}</main>
+        <AppShell account={<Suspense><AccountMenu /></Suspense>}>{children}</AppShell>
       </body>
     </html>
   );

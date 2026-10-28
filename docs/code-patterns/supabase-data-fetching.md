@@ -81,7 +81,7 @@ Rules:
 
 | Call | Where | Use it for |
 |---|---|---|
-| `supabase.auth.getClaims()` | **Server (default)** | Checking that the user is signed in and reading their id/claims. It verifies the JWT signature locally, with no round-trip to the Auth server. Used in `proxy.ts` and the test page. |
+| `supabase.auth.getClaims()` | **Server (default)** | Checking that the user is signed in and reading their id/claims. It verifies the JWT signature locally, with no round-trip to the Auth server. Used in `updateSession` (`utils/supabase/middleware.ts`, run by `proxy.ts`) and in every protected page and Server Action. |
 | `supabase.auth.getUser()` | Server or client | When you need the full, current user record from the Auth server (e.g. email, metadata). Makes a network call. |
 | `supabase.auth.getSession()` | **Client only** | Reads the session from storage **without verifying it**. Never use it to authorize anything on the server. |
 
@@ -100,11 +100,13 @@ Writes should go through a Server Action by default:
 import { refresh } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
-export async function deleteProperty(id: string) {
+export async function deleteProperty(_prev: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient();
 
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) throw new Error("Unauthorized");
+
+  const id = String(formData.get("id") ?? "");
 
   // .select().single() makes a delete that RLS blocked (0 rows) come back as an error
   const { error } = await supabase
@@ -122,7 +124,7 @@ export async function deleteProperty(id: string) {
 - Server Actions are **public POST endpoints**. Check auth inside every one, even if the UI hides the button.
 - RLS still applies, because the server client acts as the signed-in user. Treat the auth check as an early exit and RLS as the real guard.
 - **Chain `.select(...).single()` after `update` / `delete`.** Without it, a write that RLS blocks returns no error and touches 0 rows.
-- Call `refresh()` after a successful write so the page's server fetch runs again.
+- Call `refresh()` after a successful write so the page's server fetch runs again. If the URL holds state that should be cleared (e.g. `?edit=<id>` after saving or deleting), `redirect()` to the clean path instead, as `app/properties/actions.ts` does.
 - Return `{ error }` for errors the user can fix (show them with `useActionState`). Throw for bugs.
 
 ---
