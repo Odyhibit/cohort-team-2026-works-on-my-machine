@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import {
   CContainer,
@@ -15,7 +16,6 @@ import {
 import CIcon from "@coreui/icons-react";
 import { cilContrast, cilMenu, cilMoon, cilSun } from "@coreui/icons";
 import AppBreadcrumb from "./AppBreadcrumb.client";
-import AppHeaderDropdown from "./AppHeaderDropdown.client";
 import { useSidebar } from "./SidebarContext.client";
 
 const modes = [
@@ -24,7 +24,7 @@ const modes = [
   { value: "auto", label: "Auto", icon: cilContrast },
 ] as const;
 
-export default function AppHeader() {
+export default function AppHeader({ account }: { account: ReactNode }) {
   const headerRef = useRef<HTMLDivElement>(null);
   const { colorMode, setColorMode } = useColorModes("bill-payments-theme");
   const { sidebarShow, setSidebarShow } = useSidebar();
@@ -85,7 +85,7 @@ export default function AppHeader() {
           <li className="nav-item py-1">
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
           </li>
-          <AppHeaderDropdown />
+          {account}
         </CHeaderNav>
       </CContainer>
       <CContainer className="px-4" fluid>

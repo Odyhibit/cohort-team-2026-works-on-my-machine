@@ -1,19 +1,18 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
-import { signOut } from "@/app/login/actions";
+import AppHeaderDropdown from "./AppHeaderDropdown.client";
 
+// Reads the user's claims on the server so only the dropdown ships JavaScript.
 export default async function AccountMenu() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
-  if (!data?.claims) return null;
+  if (!data?.claims) {
+    return (
+      <li className="nav-item">
+        <Link className="nav-link" href="/login">Sign in</Link>
+      </li>
+    );
+  }
 
-  return (
-    <div className="d-flex align-items-center gap-3">
-      <span className="text-body-secondary">{data.claims.email}</span>
-      <Link href="/reset-password">Change password</Link>
-      <form action={signOut}>
-        <button type="submit" className="btn btn-outline-secondary">Sign out</button>
-      </form>
-    </div>
-  );
+  return <AppHeaderDropdown email={String(data.claims.email ?? "")} />;
 }

@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import AccountMenu from "@/components/AccountMenu";
 import DeleteButton from "@/components/DeleteButton.client";
 import { deleteProperty } from "./actions";
 import PropertyForm from "./PropertyForm.client";
@@ -14,14 +13,11 @@ type Props = {
 export default function PropertiesPage({ searchParams }: Props) {
   return (
     <div className="mx-auto" style={{ maxWidth: "48rem" }}>
-      <header className="mb-4 d-flex flex-wrap align-items-start justify-content-between gap-3">
+      <header className="mb-4">
         <div>
           <p className="mb-1 small fw-semibold text-uppercase text-body-secondary">Property management</p>
           <h1>Properties</h1>
         </div>
-        <Suspense>
-          <AccountMenu />
-        </Suspense>
       </header>
 
       <Suspense fallback={<p className="text-body-secondary">Loading properties…</p>}>

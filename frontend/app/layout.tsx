@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../styles/main.scss";
 import AppShell from "../components/layout/AppShell.client";
+import AccountMenu from "../components/layout/AccountMenu";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body>
-        <AppShell>{children}</AppShell>
+        <AppShell account={<Suspense><AccountMenu /></Suspense>}>{children}</AppShell>
       </body>
     </html>
   );
