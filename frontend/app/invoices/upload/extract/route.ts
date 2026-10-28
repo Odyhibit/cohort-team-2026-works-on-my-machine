@@ -1,11 +1,10 @@
-import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
-import { extractInvoiceFromPdf } from "../extract-invoice";
+import { extractInvoiceFromPdf } from "@/lib/invoices/extract-invoice";
 
 const MAX_PDF_BYTES = 4 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const supabase = createClient(await cookies());
+  const supabase = await createClient();
   const { data, error: authError } = await supabase.auth.getUser();
   if (authError || !data.user) {
     return Response.json({ error: "Sign in before extracting invoice details." }, { status: 401 });

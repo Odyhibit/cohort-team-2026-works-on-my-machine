@@ -1,5 +1,8 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CCard, CCardBody, CCardHeader } from "@coreui/react";
+import { createClient } from "@/utils/supabase/server";
 import { UploaderClient } from "./upload.client";
 import styles from "./upload.module.scss";
 
@@ -18,8 +21,26 @@ export default function Page() {
         </Link>
       </CCardHeader>
       <CCardBody>
-        <UploaderClient />
+        <Suspense fallback={<p className="text-body-secondary">Loading vendors and properties…</p>}>
+          <Uploader />
+        </Suspense>
       </CCardBody>
     </CCard>
   );
+}
+
+async function Uploader() {
+  const supabase = await createClient();
+  const { data, error: authError } = await supabase.auth.getClaims();
+  if (authError && authError.name !== "AuthSessionMissingError") throw authError;
+  if (!data?.claims) redirect("/login?next=/invoices/upload");
+
+  const [vendorResult, propertyResult] = await Promise.all([
+    supabase.from("vendors").select("id, name").order("name"),
+    supabase.from("properties").select("id, name").order("name"),
+  ]);
+  if (vendorResult.error) throw vendorResult.error;
+  if (propertyResult.error) throw propertyResult.error;
+
+  return <UploaderClient vendors={vendorResult.data} properties={propertyResult.data} />;
 }

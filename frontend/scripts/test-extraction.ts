@@ -1,11 +1,11 @@
 import { readFile } from "node:fs/promises";
-import { extractInvoiceFromPdf } from "../frontend/app/invoices/upload/extract-invoice";
+import { extractInvoiceFromPdf } from "../lib/invoices/extract-invoice";
 
 async function run() {
   const filename = process.argv[2];
 
   if (!filename) {
-    console.error("Usage: npx tsx test-extraction.ts <file.pdf>");
+    console.error("Usage: npx tsx scripts/test-extraction.ts <file.pdf>");
     process.exit(1);
   }
 

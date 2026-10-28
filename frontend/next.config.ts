@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -6,14 +7,14 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pdf-parse", "@napi-rs/canvas"],
 
   sassOptions:{
-    includePaths: [
-      "node_modules",
-      "node_modules/@coreui/coreui/scss",
+    loadPaths: [
+      path.join(__dirname, "node_modules"),
+      path.join(__dirname, "node_modules/@coreui/coreui/scss"),
     ],
   },
 
   experimental: {
-    agentFeedback: true,
+    agentFeedback: false,
   },
   cacheComponents: true,
   partialPrefetching: true,
