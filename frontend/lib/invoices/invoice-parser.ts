@@ -1,5 +1,6 @@
 export type InvoiceDetails = {
   vendorName: string | null;
+  propertyName: string | null;
   invoiceNumber: string | null;
   amountDue: string | null;
   dueDate: string | null;
@@ -25,6 +26,16 @@ const INVOICE_NUMBER_PATTERNS = [
   /\bINV[- ]\d+[A-Z0-9-]*\b/i,
   /\b[A-Z]{2,}-\d{3,}[A-Z0-9-]*\b/i,
 ];
+
+const CUSTOMER_LABEL_LINES = [
+  /^(?:\d+\.\s*)?(?:prepared for|bill(?:ed)? to|your account|customer(?:\s*\/\s*(?:business name|location))?)\s*:?$/i,
+];
+
+const CUSTOMER_INLINE_LABELS = [
+  /^(?:customer|prepared for|bill(?:ed)? to)\s*:\s*(.+)$/i,
+];
+
+const ADDRESS_LINE = /^\d+\s+\S.*,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?$/;
 
 const HEADER_TITLES = [
   /^INVOICE$/i,
@@ -139,9 +150,37 @@ function extractVendorName(text: string): string | null {
   return null;
 }
 
+function isNameLike(value: string): boolean {
+  return value.length > 0 && value.length <= 70 && !/^[\d$]/.test(value) && !/^https?:/i.test(value);
+}
+
+function extractPropertyName(text: string): string | null {
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    for (const label of CUSTOMER_INLINE_LABELS) {
+      const value = line.match(label)?.[1].trim();
+      if (value && isNameLike(value)) return value;
+    }
+    if (CUSTOMER_LABEL_LINES.some((label) => label.test(line))) {
+      const next = lines[index + 1] ?? "";
+      if (isNameLike(next)) return next;
+    }
+  }
+
+  const addressIndex = lines.findIndex((line) => ADDRESS_LINE.test(line));
+  const beforeAddress = lines[addressIndex - 1] ?? "";
+  if (addressIndex > 0 && isNameLike(beforeAddress) && beforeAddress !== beforeAddress.toUpperCase()) {
+    return beforeAddress;
+  }
+  return null;
+}
+
 export function parseInvoice(text: string): InvoiceDetails {
   return {
     vendorName: extractVendorName(text),
+    propertyName: extractPropertyName(text),
     invoiceNumber: extractInvoiceNumber(text),
     amountDue: extractAmountDue(text),
     dueDate: extractDueDate(text),

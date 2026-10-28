@@ -20,6 +20,16 @@ const initialFields: Fields = {
   status: "created",
 };
 
+function normalize(name: string) {
+  return name.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function uniqueMatch(options: Option[], name: string | null) {
+  if (!name) return undefined;
+  const matches = options.filter((option) => normalize(option.name) === normalize(name));
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
 function localDate() {
   const now = new Date();
   const year = now.getFullYear();
@@ -65,23 +75,24 @@ export function UploaderClient({ vendors, properties }: { vendors: Option[]; pro
       }
 
       const details = result.details;
-      const normalizedName = details.vendorName?.trim().replace(/\s+/g, " ").toLowerCase();
-      const matches = normalizedName
-        ? vendors.filter((vendor) => vendor.name.trim().replace(/\s+/g, " ").toLowerCase() === normalizedName)
-        : [];
+      const vendor = uniqueMatch(vendors, details.vendorName);
+      const property = uniqueMatch(properties, details.propertyName);
       setFields((prev) => ({
         ...prev,
-        vendorId: matches.length === 1 ? matches[0].id : "",
+        vendorId: vendor?.id ?? "",
+        propertyId: property?.id ?? "",
         invoiceNumber: details.invoiceNumber ?? "",
         amountDue: details.amountDue ?? "",
         dueDate: details.dueDate ?? "",
         paymentUrl: details.paymentUrl ?? "",
       }));
+      const problems = [
+        !vendor && (details.vendorName ? `No unique vendor match for “${details.vendorName}”.` : "Vendor not found in the PDF."),
+        !property && (details.propertyName ? `No unique property match for “${details.propertyName}”.` : "Property not found in the PDF."),
+      ].filter(Boolean);
       setNotification({
         color: "info",
-        message: matches.length === 1
-          ? "Details extracted. Review every field and choose a property before saving."
-          : `Details extracted. ${details.vendorName ? `No unique vendor match for “${details.vendorName}”.` : "Vendor not found in the PDF."} Choose a vendor and property before saving.`,
+        message: `Details extracted. ${problems.join(" ")} Review every field before saving.`.replace(/\s+/g, " "),
       });
     } catch (error) {
       setNotification({

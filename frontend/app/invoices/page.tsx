@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
@@ -29,7 +30,24 @@ const statusBadge: Record<string, string> = {
   paid: "text-bg-success",
 };
 
-export default async function InvoicesPage() {
+export default function InvoicesPage() {
+  return (
+    <>
+      <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+        <h1 className="h3 mb-0">Invoices</h1>
+        <Link href="/invoices/upload" className="btn btn-primary">
+          New Invoice
+        </Link>
+      </div>
+
+      <Suspense fallback={<p className="text-body-secondary">Loading invoices…</p>}>
+        <InvoiceTable />
+      </Suspense>
+    </>
+  );
+}
+
+async function InvoiceTable() {
   const supabase = await createClient();
   const { data, error: authError } = await supabase.auth.getClaims();
   if (authError && authError.name !== "AuthSessionMissingError") throw authError;
@@ -44,13 +62,6 @@ export default async function InvoicesPage() {
 
   return (
     <>
-      <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-        <h1 className="h3 mb-0">Invoices</h1>
-        <Link href="/invoices/upload" className="btn btn-primary">
-          New Invoice
-        </Link>
-      </div>
-
       {invoices.length === 0 ? (
         <p className="card card-body text-body-secondary">No invoices yet.</p>
       ) : (
