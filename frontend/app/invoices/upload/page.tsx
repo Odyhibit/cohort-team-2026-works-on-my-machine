@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CCard, CCardBody, CCardHeader } from "@coreui/react";
 import { createClient } from "@/utils/supabase/server";
-import { UploaderClient } from "./upload.client";
+import { InvoiceFormClient } from "../InvoiceForm.client";
 import styles from "./upload.module.scss";
 
 export default function Page() {
@@ -42,5 +42,5 @@ async function Uploader() {
   if (vendorResult.error) throw vendorResult.error;
   if (propertyResult.error) throw propertyResult.error;
 
-  return <UploaderClient vendors={vendorResult.data} properties={propertyResult.data} />;
+  return <InvoiceFormClient vendors={vendorResult.data} properties={propertyResult.data} />;
 }
