@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import {
   CCloseButton,
   CSidebar,
@@ -32,7 +33,9 @@ export default function AppSidebar() {
         </CSidebarBrand>
         <CCloseButton className="d-lg-none" dark onClick={() => setSidebarShow(false)} />
       </CSidebarHeader>
-      <AppSidebarNav items={nav} />
+      <Suspense fallback={null}>
+        <AppSidebarNav items={nav} />
+      </Suspense>
       <CSidebarFooter className="border-top d-none d-lg-flex">
         <CSidebarToggler onClick={() => setSidebarUnfoldable(!sidebarUnfoldable)} />
       </CSidebarFooter>

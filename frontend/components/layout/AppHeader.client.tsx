@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useRef, useSyncExternalStore } from "react";
 import {
   CContainer,
   CDropdown,
@@ -89,7 +89,9 @@ export default function AppHeader({ account }: { account: ReactNode }) {
         </CHeaderNav>
       </CContainer>
       <CContainer className="px-4" fluid>
-        <AppBreadcrumb />
+        <Suspense fallback={null}>
+          <AppBreadcrumb />
+        </Suspense>
       </CContainer>
     </CHeader>
   );
