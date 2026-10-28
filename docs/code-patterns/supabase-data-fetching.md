@@ -74,7 +74,7 @@ Rules:
 - **Create one client per request.** Never store a server client in a module-level variable.
 - **`select` only the columns you render.** Whatever you pass to a client component ends up in the page payload.
 - **Handle `error`.** Throw it, or show a message. Don't silently use `data ?? []` when there's an error.
-- **Request-time data needs `<Suspense>`.** Pages are covered by `app/loading.tsx`. Layouts aren't. See the [server/client doc](./nextjs-server-client.md#streaming-slow-data).
+- **Request-time data needs `<Suspense>` inside the page.** `app/loading.tsx` doesn't cover client navigations. See the [server/client doc](./nextjs-server-client.md#streaming-slow-data).
 - **Don't use the server client inside `"use cache"`.** It reads cookies, which are per-user and per-request.
 
 ### Which auth call to use

@@ -28,18 +28,27 @@ app/properties/test/
 ### `page.tsx` (server)
 
 ```tsx
-// Reference pattern: fetch in a Server Component with the server Supabase client,
-// then pass the data to a small client component only for interactivity.
+// Reference pattern: keep the page static, and fetch inside a <Suspense>-wrapped Server Component
+// with the server Supabase client, then pass the data to a small client component only for interactivity.
+import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import PropertySelect from "./PropertySelect.client";
 
-export default async function PropertiesTestPage() {
+export default function PropertiesTestPage() {
+  return (
+    <Suspense fallback={<p>Loading properties…</p>}>
+      <Properties />
+    </Suspense>
+  );
+}
+
+async function Properties() {
   const supabase = await createClient();
 
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) {
-    return <p><Link href="/properties">Sign in to view properties</Link></p>;
+    return <p><Link href="/login?next=/properties/test">Sign in to view properties</Link></p>;
   }
 
   const { data: properties, error } = await supabase
@@ -151,7 +160,7 @@ A mutation is triggered on the client (a click or a form submit), but **the writ
 | File selection / preview / reading a file in the browser | **Client** | `<input type="file">` + `FileReader` in a `.client.tsx` |
 | PDF extraction | **Route Handler** (`app/api/invoices/extract/route.ts`), called from the client with `fetch` | Existing invoice upload flow |
 | Auth listener, realtime subscriptions | **Client only** (browser Supabase client) | See [Supabase data fetching](./supabase-data-fetching.md) |
-| Sign in / sign out | Either side works with `@supabase/ssr`, because both write the session cookie. The current pages use the browser client. | — |
+| Sign in / sign out | Either side works with `@supabase/ssr`, because both write the session cookie. We use Server Actions. | `app/login/actions.ts`, `signOut` in `app/properties/actions.ts`. Protected pages `redirect("/login?next=<path>")` when `getClaims()` has no claims |
 
 ### Server Action template
 
@@ -201,7 +210,7 @@ page.tsx (server)  ──fetch──▶  Supabase
 
 ### Streaming slow data
 
-With `cacheComponents`, reading cookies (which every server Supabase call does) is **request-time data**. It must render inside a `<Suspense>` boundary. Pages are covered by the root [`app/loading.tsx`](../../frontend/app/loading.tsx). If you read request-time data inside a **layout**, or want part of a page to show before the data arrives, add your own boundary:
+With `cacheComponents`, reading cookies (which every server Supabase call does) is **request-time data**. It must render inside a `<Suspense>` boundary **inside the page**. Don't rely on the root [`app/loading.tsx`](../../frontend/app/loading.tsx): it covers a full page load, but on a client navigation it sits above the part of the tree that re-renders, so dev shows "Next.js encountered uncached data during prerendering or a navigation". Keep the page component itself synchronous (static heading, layout) and move auth + fetching into an async child behind `<Suspense>`:
 
 ```tsx
 import { Suspense } from "react";
@@ -230,9 +239,9 @@ Fetch from a client component only when the data **can't be known at render time
 
 Even then, prefer putting filters in `searchParams` so the server can fetch. When you do fetch on the client, cancel stale responses (see the `active` flag pattern in the Supabase doc).
 
-### Comparison: a client-rendered page
+### A full CRUD example
 
-[`app/properties/page.tsx`](../../frontend/app/properties/page.tsx) takes a client-first approach: the whole page is `"use client"`, and it checks auth and loads data in `useEffect`. That works well. The tradeoff is that the whole page ships as JavaScript and shows a loading state before the data appears. For new pages, start from the server-first pattern above. The properties page can move to it when that's convenient.
+[`app/properties/`](../../frontend/app/properties/) applies this pattern to a whole page with no `useEffect`: `page.tsx` checks auth (redirecting to [`app/login/`](../../frontend/app/login/) when signed out), fetches and renders the list; every write is a Server Action in `actions.ts`; the client leaves (`PropertyForm`, `DeletePropertyButton`) only hold `useActionState` and `window.confirm`. UI state the server needs, such as which property is being edited, lives in a search param (`?edit=<id>`) rather than `useState`.
 
 ---
 
@@ -244,5 +253,5 @@ Even then, prefer putting filters in `searchParams` so the server can fetch. Whe
 - [ ] Interactive parts are in `*.client.tsx` files that start with `"use client";`
 - [ ] Props passed to client components are serializable
 - [ ] Writes go through a `"use server"` action that checks auth and calls `refresh()`
-- [ ] Request-time data is inside `<Suspense>` (or covered by `loading.tsx`)
+- [ ] Request-time data is inside a `<Suspense>` boundary in the page (the root `loading.tsx` doesn't cover client navigations)
 - [ ] `npm run lint` passes
