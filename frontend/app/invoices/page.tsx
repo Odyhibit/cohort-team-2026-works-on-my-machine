@@ -76,7 +76,7 @@ async function InvoiceTable() {
                 <th scope="col">Date</th>
                 <th scope="col">Due</th>
                 <th scope="col">Status</th>
-                <th scope="col"><span className="visually-hidden">Payment</span></th>
+                <th scope="col"><span className="visually-hidden">Actions</span></th>
               </tr>
             </thead>
             <tbody>
@@ -95,8 +95,9 @@ async function InvoiceTable() {
                   </td>
                   <td>
                     {invoice.payment_url && (
-                      <a href={invoice.payment_url} target="_blank" rel="noreferrer">Pay</a>
+                      <a href={invoice.payment_url} target="_blank" rel="noreferrer" className="me-3">Pay</a>
                     )}
+                    <Link href={`/invoices/${invoice.id}/edit`} aria-label={`Edit invoice ${invoice.reference_number}`}>Edit</Link>
                   </td>
                 </tr>
               ))}
