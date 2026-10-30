@@ -24,7 +24,7 @@ export async function saveVendor(_prev: FormState, formData: FormData): Promise<
 
   const values = { name, account_number: account_number || null, payment_type: payment_type || null, autopay };
   const query = id
-    ? supabase.from("vendors").update(values).eq("id", id)
+    ? supabase.from("vendors").update(values).eq("id", id).is("deleted_at", null)
     : supabase.from("vendors").insert(values);
   const { error } = await query.select("id").single();
   if (error) return { error: error.message, values: submitted };
@@ -33,7 +33,7 @@ export async function saveVendor(_prev: FormState, formData: FormData): Promise<
   redirect("/vendors");
 }
 
-export async function deleteVendor(_prev: FormState, formData: FormData): Promise<FormState> {
+export async function archiveVendor(_prev: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient();
 
   const { data } = await supabase.auth.getClaims();
@@ -42,7 +42,12 @@ export async function deleteVendor(_prev: FormState, formData: FormData): Promis
   const id = String(formData.get("id") ?? "");
   if (!uuid.test(id)) return { error: "Invalid vendor." };
   const { error } = await supabase
-    .from("vendors").delete().eq("id", id).select("id").single();
+    .from("vendors")
+    .update({ deleted_at: new Date().toISOString(), deleted_by: data.claims.sub })
+    .eq("id", id)
+    .is("deleted_at", null)
+    .select("id")
+    .single();
   if (error) return { error: error.message };
 
   redirect("/vendors");

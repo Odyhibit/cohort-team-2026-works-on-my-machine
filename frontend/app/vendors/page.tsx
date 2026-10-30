@@ -31,6 +31,7 @@ async function VendorTable() {
   const { data: vendors, error } = await supabase
     .from("vendors")
     .select("id, name, account_number, payment_type, autopay")
+    .is("deleted_at", null)
     .order("name");
   if (error) throw error;
 

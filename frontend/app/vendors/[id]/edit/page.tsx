@@ -36,6 +36,7 @@ async function VendorEditor({ params }: Props) {
   const { data: vendor, error } = await supabase.from("vendors")
     .select("id, name, account_number, payment_type, autopay")
     .eq("id", id)
+    .is("deleted_at", null)
     .maybeSingle();
   if (error) throw error;
   if (!vendor) notFound();

@@ -2,8 +2,8 @@
 
 import { useActionState, useId } from "react";
 import Link from "next/link";
-import { deleteVendor, saveVendor } from "./actions";
-import DeleteButton from "@/components/DeleteButton.client";
+import { archiveVendor, saveVendor } from "./actions";
+import ArchiveButton from "@/components/ArchiveButton.client";
 
 export type Vendor = { id: string; name: string; account_number: string | null; payment_type: string | null; autopay: boolean };
 
@@ -37,7 +37,7 @@ export default function VendorForm({ vendor }: { vendor?: Vendor }) {
         <button type="submit" form={formId} disabled={pending} className="btn btn-primary">{pending ? "Saving…" : vendor ? "Save changes" : "Add vendor"}</button>
         <Link href="/vendors" className="btn btn-outline-secondary">Cancel</Link>
         </div>
-        {vendor && <DeleteButton action={deleteVendor} id={vendor.id} name={vendor.name} />}
+        {vendor && <ArchiveButton action={archiveVendor} id={vendor.id} name={vendor.name} />}
       </div>
     </div>
   );
