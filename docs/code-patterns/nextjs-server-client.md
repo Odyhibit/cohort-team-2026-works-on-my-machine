@@ -137,6 +137,7 @@ If a component uses any of the following, it must be in a `.client.tsx` file.
 **Interactive third-party UI**
 
 - CoreUI components that keep internal state or take callbacks (modals, dropdowns, toasts, `CForm` with `validated`). Static CoreUI markup such as `CCard` and `CCardHeader` works in Server Components; see `app/invoices/upload/page.tsx`.
+- The app shell (sidebar, header, breadcrumb, theme toggle) is in [`components/layout/`](../../frontend/components/layout/). The stateful pieces are `*.client.tsx` files. The root `app/layout.tsx` stays a Server Component and wraps `children` in `AppShell`. The header's account menu is a server component (`components/layout/AccountMenu.tsx`) passed into `AppShell` as the `account` prop inside `<Suspense>`, so the user's email is read on the server and only the dropdown ships JavaScript. Sidebar links live in `components/layout/nav.tsx`. Add a route there, and to `routeNames` for the breadcrumb, when you add a page.
 
 **Supabase work that must happen in the browser**
 
@@ -160,7 +161,7 @@ A mutation is triggered on the client (a click or a form submit), but **the writ
 | File selection / preview / reading a file in the browser | **Client** | `<input type="file">` + `FileReader` in a `.client.tsx` |
 | PDF extraction | **Route Handler** (`app/api/invoices/extract/route.ts`), called from the client with `fetch` | Existing invoice upload flow |
 | Auth listener, realtime subscriptions | **Client only** (browser Supabase client) | See [Supabase data fetching](./supabase-data-fetching.md) |
-| Sign in / sign out | Either side works with `@supabase/ssr`, because both write the session cookie. We use Server Actions. | `app/login/actions.ts`, `signOut` in `app/properties/actions.ts`. Protected pages `redirect("/login?next=<path>")` when `getClaims()` has no claims |
+| Sign in / sign out | Either side works with `@supabase/ssr`, because both write the session cookie. We use Server Actions. | `app/login/actions.ts` (`signIn` and `signOut`; `signOut` is the Sign out item in `components/layout/AppHeaderDropdown.client.tsx`). Protected pages `redirect("/login?next=<path>")` when `getClaims()` has no claims |
 
 ### Server Action template
 
@@ -171,7 +172,10 @@ A mutation is triggered on the client (a click or a form submit), but **the writ
 import { refresh } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
-export async function createProperty(formData: FormData) {
+export type FormState = { error: string; values?: Record<string, string> } | undefined;
+
+// (prev, formData) is the signature useActionState expects
+export async function saveProperty(_prev: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient();
 
   // Server Actions are public POST endpoints. Always check auth.
@@ -179,10 +183,10 @@ export async function createProperty(formData: FormData) {
   if (!data?.claims) throw new Error("Unauthorized");
 
   const name = String(formData.get("name") ?? "").trim();
-  if (!name) return { error: "Enter a property name." };
+  if (!name) return { error: "Enter a property name.", values: { name } };
 
-  const { error } = await supabase.from("properties").insert({ name });
-  if (error) return { error: error.message };
+  const { error } = await supabase.from("properties").insert({ name }).select("id").single();
+  if (error) return { error: error.message, values: { name } };
 
   refresh(); // re-render the current route so the server fetch picks up the new row
 }
@@ -241,7 +245,7 @@ Even then, prefer putting filters in `searchParams` so the server can fetch. Whe
 
 ### A full CRUD example
 
-[`app/properties/`](../../frontend/app/properties/) applies this pattern to a whole page with no `useEffect`: `page.tsx` checks auth (redirecting to [`app/login/`](../../frontend/app/login/) when signed out), fetches and renders the list; every write is a Server Action in `actions.ts`; the client leaves (`PropertyForm`, `DeletePropertyButton`) only hold `useActionState` and `window.confirm`. UI state the server needs, such as which property is being edited, lives in a search param (`?edit=<id>`) rather than `useState`.
+[`app/properties/`](../../frontend/app/properties/) applies this pattern to a whole page with no `useEffect`: `page.tsx` checks auth (redirecting to [`app/login/`](../../frontend/app/login/) when signed out), fetches and renders the list; every write is a Server Action in `actions.ts`; the client leaves (`PropertyForm.client.tsx` and the shared [`components/DeleteButton.client.tsx`](../../frontend/components/DeleteButton.client.tsx)) only hold `useActionState` and `window.confirm`. UI state the server needs, such as which property is being edited, lives in a search param (`?edit=<id>`) rather than `useState`. [`app/vendors/`](../../frontend/app/vendors/) follows the same shape.
 
 ---
 
