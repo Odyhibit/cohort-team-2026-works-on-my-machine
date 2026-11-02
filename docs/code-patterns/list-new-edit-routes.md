@@ -36,8 +36,8 @@ frontend/app/
 └── users/
     ├── layout.tsx                 Route metadata
     ├── page.tsx                   /users: admin check, profile query, clickable list
-    ├── actions.ts                 Server Action: update profile name and role
-    ├── UserForm.client.tsx        Edit form with a fixed set of role choices
+    ├── actions.ts                 Server Action: update profile name
+    ├── UserForm.client.tsx        Edit form for the profile name
     ├── new/
     │   ├── layout.tsx             Add-user page metadata
     │   ├── page.tsx               /users/new: admin check, then CreateUserForm
@@ -52,7 +52,7 @@ Shared pieces live outside the routes:
 - [`ClickableTableRow.client.tsx`](../../frontend/components/ClickableTableRow.client.tsx) makes list rows open their edit page. The visible name or invoice reference remains a real link for keyboard access and opening a new tab.
 - [`ArchiveButton.client.tsx`](../../frontend/components/ArchiveButton.client.tsx) supplies the confirmation and pending state for vendor, invoice, and property archiving. User profiles do not currently have an archive action.
 - [`nav.tsx`](../../frontend/components/layout/nav.tsx) links the sidebar to resource lists and Activity, and supplies breadcrumb names for their routes. Activity sits under Manage, above Users.
-- [`roles.ts`](../../frontend/lib/users/roles.ts) is the single list of selectable user roles and display labels.
+- [`roles.ts`](../../frontend/lib/users/roles.ts) defines role values and display labels; role controls are hidden in the single-role demo.
 - [`status.ts`](../../frontend/lib/invoices/status.ts) defines the selectable invoice statuses and display labels.
 - [`extract-invoice.ts`](../../frontend/lib/invoices/extract-invoice.ts) and [`invoice-parser.ts`](../../frontend/lib/invoices/invoice-parser.ts) turn PDF text into suggested form values.
 
@@ -82,7 +82,7 @@ Invoices write to `public.invoices`. The list joins vendor and property names fo
 
 The new-invoice form can preview a selected PDF or image in the browser; it does not store the file. For a PDF, it posts to [`/api/invoices/extract`](../../frontend/app/api/invoices/extract/route.ts), which checks auth, validates the file, and calls the parser in `lib/invoices/`. Suggested values still require review, including matching vendor and property names to their IDs. The edit form uses the same component without its file-preview panel.
 
-Users have two data sources. `/users/new` signs up an account through Supabase Auth; the database trigger creates its `public.profiles` row with the `clerk` role. `/users/[id]/edit` updates the profile name and role, while the account email and password remain in Supabase Auth. The page and action check for an admin, and the profile update policy in the role migration enforces that check in Postgres as well. The new-user action returns a success or error message on the form; successful vendor and user edits return to their lists. The user edit form's History button opens Activity filtered to actions **performed by** that user. Profile changes are not audit targets.
+Users have two data sources. `/users/new` signs up an account through Supabase Auth; the database trigger creates its `public.profiles` row with the `admin` role. `/users/[id]/edit` updates the profile name, while the account email and password remain in Supabase Auth. The page and action check for an admin, and the profile update policy in the role migration enforces that check in Postgres as well. The new-user action returns a success or error message on the form; successful vendor and user edits return to their lists. The user edit form's History button opens Activity filtered to actions **performed by** that user. The list, create page, and editor do not display a role control. Profile changes are not audit targets.
 
 ## Activity viewer
 

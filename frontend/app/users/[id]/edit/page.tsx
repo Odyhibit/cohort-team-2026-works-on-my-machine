@@ -41,7 +41,7 @@ async function UserEditor({ params }: Props) {
   if (actor.role !== "admin") redirect("/users");
 
   const { data: user, error } = await supabase.from("profiles")
-    .select("id, name, role")
+    .select("id, name")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
