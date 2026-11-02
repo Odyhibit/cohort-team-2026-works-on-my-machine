@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -18,6 +17,8 @@ import {
   CTableHeaderCell,
   CTableRow,
 } from "@coreui/react";
+
+import ClickableTableRow from "@/components/ClickableTableRow.client";
 
 import {
   invoiceStatusLabels,
@@ -127,7 +128,7 @@ export default function Dashboard({
             {greeting}, {firstName}!
           </h1>
           <p className="text-body-secondary mb-0">
-            Here's what needs attention across your properties.
+            Here&apos;s what needs attention across your properties.
           </p>
         </div>
 
@@ -211,11 +212,15 @@ export default function Dashboard({
 
               <CTableBody>
                 {dueSoon.map((invoice) => (
-                  <CTableRow key={invoice.id}>
+                  <ClickableTableRow
+                    key={invoice.id}
+                    href={`/invoices/${invoice.id}/edit`}
+                  >
                     <CTableDataCell className="ps-3 fw-medium">
                       <Link
                         href={`/invoices/${invoice.id}/edit`}
                         className="text-body text-decoration-none"
+                        aria-label={`Edit invoice ${invoice.reference_number}`}
                       >
                         {invoice.vendor?.name ?? "—"}
                       </Link>
@@ -234,7 +239,7 @@ export default function Dashboard({
                         {getStatusLabel(invoice.status)}
                       </CBadge>
                     </CTableDataCell>
-                  </CTableRow>
+                  </ClickableTableRow>
                 ))}
               </CTableBody>
             </CTable>
