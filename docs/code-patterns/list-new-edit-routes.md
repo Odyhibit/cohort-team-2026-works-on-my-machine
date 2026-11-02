@@ -9,10 +9,11 @@ The Vendors feature established the list → new/edit structure. Invoices follow
 ```text
 frontend/app/
 ├── api/invoices/extract/route.ts  POST /api/invoices/extract: parse a selected PDF
+├── api/events/search/route.ts     Authenticated autocomplete search for Activity filters
 ├── events/
 │   ├── layout.tsx                 Route metadata
 │   ├── page.tsx                   /events: server auth, URL filters, audit query, history list and pagination
-│   └── FilterForm.client.tsx      Record/user picker; submits filters in the URL
+│   └── FilterForm.client.tsx      Record/user autocomplete; submits selected ID in the URL
 ├── vendors/
 │   ├── layout.tsx                 Route metadata
 │   ├── page.tsx                   /vendors: server auth, active vendor query, clickable list
@@ -85,7 +86,7 @@ Users have two data sources. `/users/new` signs up an account through Supabase A
 
 ## Activity viewer
 
-`/events` is a page route, not an API endpoint or a business form. Its `page.tsx` checks auth and reads `searchParams` in a `<Suspense>`-wrapped server component. With no filter, it shows recent events. A filter uses `?type=invoice|vendor|property|actor&id=<uuid>`; `actor` matches `actor_user_id`, while the other types match the event's target record. The small `FilterForm.client.tsx` only switches the available picker choices and submits a GET request. The server validates the filter, queries `public.audit_events` newest first, and shows 50 events at a time with URL-based pagination. It renders each event's actor, timestamp, action, changed fields, and reason when present.
+`/events` is a page route, not an API endpoint or a business form. Its `page.tsx` checks auth and reads `searchParams` in a `<Suspense>`-wrapped server component. With no filter, it shows recent events. A filter uses `?type=invoice|vendor|property|actor&id=<uuid>`; `actor` matches `actor_user_id`, while the other types match the event's target record. `FilterForm.client.tsx` searches `/api/events/search` after two characters and submits the selected ID in a GET request. Invoice search matches vendor names and displays vendor, invoice reference, and property together; other types match their record names. Results include archived records and are limited to 20 per search. The server validates the selected record with a separate ID lookup, queries `public.audit_events` newest first, and shows 50 events at a time with URL-based pagination. It renders each event's actor, timestamp, action, changed fields, and reason when present.
 
 The database trigger records invoice, vendor, and property changes in `audit_events`, with exactly one target per event. The existing audit indexes support target and actor filters. Vendor and invoice edit forms link to their own record history; the user edit form links to actions by that user. Properties currently uses a same-page edit form at `/properties?edit=<id>`, rather than a separate `[id]/edit` route. Vendor, invoice, and property write actions revalidate `/events` after a successful change. The viewer does not track changes to user profiles or combine a vendor/property's history with events on related invoices.
 

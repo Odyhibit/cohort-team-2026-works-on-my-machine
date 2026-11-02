@@ -181,7 +181,7 @@ async function EventViewer({ searchParams }: Props) {
 
   return (
     <>
-      <FilterForm key={`${type}:${requestedId}:${page}`} options={options} initialType={type} initialId={validSelection ? requestedId : ""} />
+      <FilterForm key={`${type}:${requestedId}:${page}`} initialLabel={selectedLabel} initialType={type} initialId={validSelection ? requestedId : ""} />
       {!validSelection ? <p role="alert" className="alert alert-warning">Choose a valid record or user to view its activity.</p> : (
         <section aria-labelledby="activity-heading">
           <h2 id="activity-heading" className="h5 mb-3">{type === "actor" ? `Actions by ${selectedLabel ?? "user"}` : selectedLabel ? `History: ${selectedLabel}` : "Recent activity"}</h2>
