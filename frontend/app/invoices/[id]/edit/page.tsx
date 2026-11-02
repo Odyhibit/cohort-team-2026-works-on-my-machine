@@ -35,7 +35,7 @@ async function InvoiceEditor({ params }: Props) {
   if (authError && authError.name !== "AuthSessionMissingError") throw authError;
   if (!data?.claims) redirect(`/login?next=/invoices/${id}/edit`);
 
-  const [invoiceResult, vendorResult, propertyResult] = await Promise.all([
+  const [invoiceResult, vendorResult, propertyResult, evaluationResult] = await Promise.all([
     supabase.from("invoices")
       .select("id, reference_number, vendor_id, property_id, amount, due_date, payment_url, status")
       .eq("id", id)
@@ -43,10 +43,17 @@ async function InvoiceEditor({ params }: Props) {
       .maybeSingle(),
     supabase.from("vendors").select("id, name, account_number, deleted_at").order("name"),
     supabase.from("properties").select("id, name, deleted_at").order("name"),
+    supabase.from("invoice_rule_evaluations")
+      .select("outcome, reasons, evaluated_amount, comparable_count, comparable_average, max_auto_approval_amount, max_above_average_percent, min_comparable_bills")
+      .eq("invoice_id", id)
+      .order("evaluated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   if (invoiceResult.error) throw invoiceResult.error;
   if (vendorResult.error) throw vendorResult.error;
   if (propertyResult.error) throw propertyResult.error;
+  if (evaluationResult.error) throw evaluationResult.error;
   const invoice = invoiceResult.data;
   if (!invoice) notFound();
   if (!isInvoiceStatus(invoice.status)) throw new Error("Invoice has an unsupported status.");
@@ -62,6 +69,7 @@ async function InvoiceEditor({ params }: Props) {
     key={JSON.stringify(invoice)}
     vendors={vendors}
     properties={properties}
+    evaluation={evaluationResult.data}
     invoice={{
       id: invoice.id,
       fields: {
