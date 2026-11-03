@@ -43,9 +43,13 @@ Thing.client.tsx ──▶ browser createClient()  only for listeners / realtime
 ```
 
 - `proxy.ts` is the Next 16 replacement for `middleware.ts`. The helper file is still called `middleware.ts` because Supabase's guide uses that name; Next.js never sees the helper's file name.
-- `proxy.ts` refreshes the cookie on every request, so the server client's `setAll` can safely swallow the error Server Components throw when they try to set cookies (see the `try/catch` in `server.ts`).
+- `proxy.ts` refreshes the cookie on every matched request, so the server client's `setAll` can safely swallow the error Server Components throw when they try to set cookies (see the `try/catch` in `server.ts`).
 
 ---
+
+## Central login requirement
+
+The proxy's `updateSession` verifies claims and redirects anonymous application-page requests to `/login?next=<original path and query>`. Only `/login` and `/reset-password` are public application pages, so password recovery can establish a session. Static assets remain excluded by the proxy matcher. Anonymous API requests receive JSON with status 401 instead of login HTML. Redirects and rejections preserve auth cookie updates and are marked private/no-store. Page, action, and RLS checks still enforce access to data and privileged operations.
 
 ## Server: reading data
 
