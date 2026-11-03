@@ -71,13 +71,14 @@ function paymentLink(value: string) {
   }
 }
 
-export function InvoiceFormClient({ vendors: vendorsProp, properties: propertiesProp, invoice, evaluation, document, paymentConfirmation }: {
+export function InvoiceFormClient({ vendors: vendorsProp, properties: propertiesProp, invoice, evaluation, document, paymentConfirmation, canViewHistory = false }: {
   vendors: VendorOption[];
   properties: Option[];
   invoice?: { id: string; fields: Fields };
   evaluation?: Evaluation | null;
   document?: { url?: string; mime?: string; name?: string; error?: string };
   paymentConfirmation?: string | null;
+  canViewHistory?: boolean;
 }) {
   const router = useRouter();
   const [fields, setFields] = useState<Fields>(invoice?.fields ?? initialFields);
@@ -345,7 +346,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
       </CForm>
       <div className={styles.actions}>
         <div className={styles.actionGroup}>
-          {invoice && <InvoiceMoreActions id={invoice.id} name={invoice.fields.invoiceNumber} status={invoice.fields.status} />}
+          {invoice && <InvoiceMoreActions id={invoice.id} name={invoice.fields.invoiceNumber} status={invoice.fields.status} canViewHistory={canViewHistory} />}
           {invoice && invoice.fields.status === "waiting on approval" &&
             <CButton color="success" type="button" disabled={saving} onClick={() => startSaving(async () => {
               try {

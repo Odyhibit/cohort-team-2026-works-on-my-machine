@@ -3,8 +3,9 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { saveUser } from "./actions";
+import UserRoleSelect from "./UserRoleSelect";
 
-export type UserProfile = { id: string; name: string };
+export type UserProfile = { id: string; name: string; role: string };
 
 export default function UserForm({ user }: { user: UserProfile }) {
   const [state, formAction, pending] = useActionState(saveUser, undefined);
@@ -17,6 +18,7 @@ export default function UserForm({ user }: { user: UserProfile }) {
       <label className="form-label">Name
         <input type="text" name="name" required defaultValue={state?.name ?? user.name} className="form-control mt-1" />
       </label>
+      <UserRoleSelect value={state?.role ?? user.role} />
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div className="d-flex gap-3">
           <button type="submit" disabled={pending} className="btn btn-primary">{pending ? "Saving…" : "Save changes"}</button>

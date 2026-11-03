@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { getAccess } from "@/lib/users/access";
 
 type InvoiceMatch = {
   id: string;
@@ -9,9 +9,9 @@ type InvoiceMatch = {
 };
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
-  const { data, error: authError } = await supabase.auth.getClaims();
-  if (authError || !data?.claims) return Response.json({ error: "Sign in to search activity records." }, { status: 401 });
+  const { supabase, userId, role } = await getAccess();
+  if (!userId) return Response.json({ error: "Sign in to search activity records." }, { status: 401 });
+  if (role !== "admin") return Response.json({ error: "Only admins can search activity records." }, { status: 403 });
 
   const params = new URL(request.url).searchParams;
   const type = params.get("type");

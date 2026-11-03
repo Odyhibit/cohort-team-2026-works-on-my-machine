@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { createUser } from "./actions";
+import UserRoleSelect from "../UserRoleSelect";
 
 export default function CreateUserForm() {
   const [state, formAction, pending] = useActionState(createUser, undefined);
@@ -16,12 +17,16 @@ export default function CreateUserForm() {
         Created {state.created.email}.
         {state.created.needsConfirmation && " They need to follow the confirmation link sent to that address before signing in."}
       </p>}
+      {state && "created" in state && state.created.roleWarning && <p role="alert" className="alert alert-warning mb-0">
+        {state.created.roleWarning} {state.created.userId && <Link href={`/users/${state.created.userId}/edit`}>Edit user</Link>}
+      </p>}
       <label className="form-label">Name
         <input type="text" name="name" required autoComplete="off" defaultValue={values?.name} className="form-control mt-1" />
       </label>
       <label className="form-label">Email
         <input type="email" name="email" required autoComplete="off" defaultValue={values?.email} className="form-control mt-1" />
       </label>
+      <UserRoleSelect value={values?.role ?? "clerk"} />
       <label className="form-label">Password
         <input type="password" name="password" required minLength={6} autoComplete="new-password" className="form-control mt-1" />
       </label>

@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "../styles/main.scss";
 import AppShell from "../components/layout/AppShell.client";
 import AccountMenu from "../components/layout/AccountMenu";
+import SidebarNavigation from "../components/layout/SidebarNavigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body>
-        <AppShell account={<Suspense><AccountMenu /></Suspense>}>{children}</AppShell>
+        <AppShell account={<Suspense><AccountMenu /></Suspense>} navigation={<Suspense fallback={null}><SidebarNavigation /></Suspense>}>{children}</AppShell>
       </body>
     </html>
   );

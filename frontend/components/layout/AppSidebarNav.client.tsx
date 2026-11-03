@@ -6,8 +6,10 @@ import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import { CNavLink, CSidebarNav } from "@coreui/react";
 import type { NavEntry } from "./nav";
+import nav from "./nav";
 
-export function AppSidebarNav({ items }: { items: NavEntry[] }) {
+export function AppSidebarNav({ isAdmin = false }: { isAdmin?: boolean }) {
+  const items = nav.filter((item) => !item.adminOnly || isAdmin);
   const pathname = usePathname();
 
   const label = (item: NavEntry, indent: boolean) => (

@@ -7,11 +7,12 @@ import ArchiveButton from "@/components/ArchiveButton.client";
 
 export type Vendor = { id: string; name: string; account_number: string | null; payment_type: string | null; autopay: boolean };
 
-export default function VendorForm({ vendor, defaultName, onSaved, onCancel }: {
+export default function VendorForm({ vendor, defaultName, onSaved, onCancel, canViewHistory = false }: {
   vendor?: Vendor;
   defaultName?: string;
   onSaved?: (vendor: SavedVendor) => void;
   onCancel?: () => void;
+  canViewHistory?: boolean;
 }) {
   const formId = useId();
   const embedded = !!onSaved;
@@ -49,7 +50,7 @@ export default function VendorForm({ vendor, defaultName, onSaved, onCancel }: {
         {embedded
           ? <button type="button" onClick={onCancel} className="btn btn-outline-secondary">Cancel</button>
           : <Link href="/vendors" className="btn btn-outline-secondary">Cancel</Link>}
-        {vendor && <Link href={`/events?type=vendor&id=${vendor.id}`} className="btn btn-outline-secondary">History</Link>}
+        {vendor && canViewHistory && <Link href={`/events?type=vendor&id=${vendor.id}`} className="btn btn-outline-secondary">History</Link>}
         </div>
         {vendor && <ArchiveButton action={archiveVendor} id={vendor.id} name={vendor.name} />}
       </div>

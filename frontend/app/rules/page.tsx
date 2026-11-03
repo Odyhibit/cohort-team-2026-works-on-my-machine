@@ -1,6 +1,5 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/lib/users/access";
 import RulesForm from "./RulesForm.client";
 
 export default function RulesPage() {
@@ -18,10 +17,7 @@ export default function RulesPage() {
 }
 
 async function RuleSettings() {
-  const supabase = await createClient();
-  const { data, error: authError } = await supabase.auth.getClaims();
-  if (authError && authError.name !== "AuthSessionMissingError") throw authError;
-  if (!data?.claims) redirect("/login?next=/rules");
+  const { supabase } = await requireAdmin("/rules");
 
   const settingsResult = await supabase.from("approval_rule_settings")
       .select("max_auto_approval_amount, max_above_average_percent, min_comparable_bills")

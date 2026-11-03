@@ -17,6 +17,7 @@ export type NavEntry = {
   to?: string;
   icon?: ReactNode;
   items?: NavEntry[];
+  adminOnly?: boolean;
 };
 
 // Sidebar config. Only routes that exist in app/ are listed.
@@ -27,9 +28,10 @@ const nav: NavEntry[] = [
   { component: CNavTitle, name: "Manage" },
   { component: CNavItem, name: "Properties", to: "/properties", icon: <CIcon icon={cilBuilding} customClassName="nav-icon" /> },
   { component: CNavItem, name: "Vendors", to: "/vendors", icon: <CIcon icon={cilIndustry} customClassName="nav-icon" /> },
-  { component: CNavItem, name: "Rules", to: "/rules", icon: <CIcon icon={cilSettings} customClassName="nav-icon" /> },
-  { component: CNavItem, name: "Activity", to: "/events", icon: <CIcon icon={cilHistory} customClassName="nav-icon" /> },
-  { component: CNavItem, name: "Users", to: "/users", icon: <CIcon icon={cilUser} customClassName="nav-icon" /> },
+  { component: CNavTitle, name: "Admin", adminOnly: true },
+  { component: CNavItem, name: "Rules", to: "/rules", adminOnly: true, icon: <CIcon icon={cilSettings} customClassName="nav-icon" /> },
+  { component: CNavItem, name: "Activity", to: "/events", adminOnly: true, icon: <CIcon icon={cilHistory} customClassName="nav-icon" /> },
+  { component: CNavItem, name: "Users", to: "/users", adminOnly: true, icon: <CIcon icon={cilUser} customClassName="nav-icon" /> },
 ];
 
 export default nav;
