@@ -122,13 +122,15 @@ async function EventViewer({ searchParams }: Props) {
   const invoiceNames = new Map(invoiceResult.data.map((invoice) => [
     invoice.id, `${vendors.get(invoice.vendor_id) ?? "Unknown vendor"} ${invoice.reference_number}`,
   ]));
+  const archived = (record: { deleted_at: string | null }) => record.deleted_at ? " (archived)" : "";
+  const invoiceTargets = new Map(invoiceResult.data.map((invoice) => [invoice.id, `${invoiceNames.get(invoice.id)}${archived(invoice)}`]));
   const options: FilterOptions = {
     invoice: invoiceResult.data.map((invoice) => ({
       id: invoice.id,
-      label: `${invoiceNames.get(invoice.id) ?? invoice.reference_number} for ${properties.get(invoice.property_id) ?? "Unknown property"}${invoice.deleted_at ? " (archived)" : ""}`,
+      label: `${invoiceNames.get(invoice.id) ?? invoice.reference_number} for ${properties.get(invoice.property_id) ?? "Unknown property"}${archived(invoice)}`,
     })),
-    vendor: vendorResult.data.map((vendor) => ({ id: vendor.id, label: `${vendor.name}${vendor.deleted_at ? " (archived)" : ""}` })),
-    property: propertyResult.data.map((property) => ({ id: property.id, label: `${property.name}${property.deleted_at ? " (archived)" : ""}` })),
+    vendor: vendorResult.data.map((vendor) => ({ id: vendor.id, label: `${vendor.name}${archived(vendor)}` })),
+    property: propertyResult.data.map((property) => ({ id: property.id, label: `${property.name}${archived(property)}` })),
     actor: profileResult.data.map((profile) => ({ id: profile.id, label: profile.name })),
   };
   // These options contain targeted ID lookups, not a capped picker list.
@@ -144,7 +146,7 @@ async function EventViewer({ searchParams }: Props) {
           {visibleEvents.length === 0 ? <p className="card card-body text-body-secondary">No events found for this filter.</p> : (
             <ol className="list-group mb-3">
               {visibleEvents.map((event) => {
-                const target = event.invoice_id ? invoiceNames.get(event.invoice_id)
+                const target = event.invoice_id ? invoiceTargets.get(event.invoice_id)
                   : event.vendor_id ? options.vendor.find((option) => option.id === event.vendor_id)?.label
                     : options.property.find((option) => option.id === event.property_id)?.label;
                 const actorName = event.actor_type === "system" ? "System"
