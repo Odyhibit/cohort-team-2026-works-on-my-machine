@@ -7,6 +7,7 @@ import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
 import type { InvoiceDetails } from "@/lib/invoices/invoice-parser";
 import { invoiceStatusLabels } from "@/lib/invoices/status";
 import { ruleReasonLabel } from "@/lib/invoices/rule-reasons";
+import { isAutoPayable } from "@/lib/invoices/payment-gate";
 import { approveInvoice, createInvoice, updateInvoice, type InvoiceInput } from "./actions";
 import AppDialog from "@/components/AppDialog.client";
 import VendorForm from "@/app/vendors/VendorForm.client";
@@ -91,7 +92,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
   const [extracting, setExtracting] = useState(false);
   const [validated, setValidated] = useState(false);
   const [saving, startSaving] = useTransition();
-  const [dialog, setDialog] = useState<"vendor" | "property" | null>(null);
+  const [dialog, setDialog] = useState<"vendor" | "property" | "pay" | null>(null);
   const [dialogKey, setDialogKey] = useState(0);
   const [unmatched, setUnmatched] = useState<{ vendor?: string; property?: string }>({});
   const [addedVendors, setAddedVendors] = useState<VendorOption[]>([]);
@@ -129,6 +130,22 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
     setAddedVendors([]);
     setAddedProperties([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function handlePay() {
+    if (!invoice) return;
+    startSaving(async () => {
+      try {
+        if (await isAutoPayable({ id: invoice.id, vendorId: fields.vendorId })) {
+          // TODO: auto-pay
+          setNotification({ color: "info", message: "Auto-pay is not available yet." });
+          return;
+        }
+        setDialog("pay");
+      } catch (error) {
+        setNotification({ color: "danger", message: error instanceof Error ? error.message : "Could not start payment." });
+      }
+    });
   }
 
   function selectFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -377,7 +394,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
               }
             })}>Approve</CButton>}
           {invoice?.fields.status === "approved" && (payUrl ? (
-            <a href={payUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary">Pay</a>
+            <CButton color="primary" variant="outline" type="button" disabled={saving} onClick={handlePay}>Pay</CButton>
           ) : (
             <button type="button" disabled className="btn btn-outline-primary" title="Enter a valid payment URL to enable Pay">Pay</button>
           ))}
@@ -410,6 +427,18 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
             setDialog(null);
           }} />
       </AppDialog>
+      {invoice && payUrl && <AppDialog visible={dialog === "pay"} onClose={() => setDialog(null)} title="Pay vendor">
+        <ol className="ps-3 d-grid gap-4 mb-0">
+          <li className="d-grid gap-2">
+            <p className="mb-0">Open the vendor&apos;s payment page and complete payment.</p>
+            <div><a href={payUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary">Open vendor payment page</a></div>
+          </li>
+          <li className="d-grid gap-2">
+            <p className="mb-0">Come back here and enter the confirmation number.</p>
+            <PaymentConfirmation invoiceId={invoice.id} confirmation={paymentConfirmation ?? null} variant="dialog" />
+          </li>
+        </ol>
+      </AppDialog>}
     </div>
   );
 }
