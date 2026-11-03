@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { loadEventRecords } from "@/lib/events/records";
 import FilterForm, { type FilterOptions, type FilterType } from "./FilterForm.client";
 
 type Props = { searchParams: Promise<{ [key: string]: string | string[] | undefined }> };
@@ -97,54 +98,23 @@ async function EventViewer({ searchParams }: Props) {
   const validFilter = (!requestedType && !requestedId) || (Boolean(type) && uuid.test(requestedId));
   const page = typeof params.page === "string" && /^[1-9]\d{0,3}$/.test(params.page) ? Number(params.page) : 1;
 
-  const [invoiceResult, vendorResult, propertyResult, profileResult] = await Promise.all([
-    supabase.from("invoices").select("id, reference_number, vendor_id, property_id, deleted_at").order("reference_number"),
-    supabase.from("vendors").select("id, name, deleted_at").order("name"),
-    supabase.from("properties").select("id, name, deleted_at").order("name"),
-    supabase.from("profiles").select("id, name").order("name"),
-  ]);
-  if (invoiceResult.error) throw invoiceResult.error;
-  if (vendorResult.error) throw vendorResult.error;
-  if (propertyResult.error) throw propertyResult.error;
-  if (profileResult.error) throw profileResult.error;
-
-  // Picker results can be capped by PostgREST. Validate History links by ID,
-  // independently, and retain the selected record even outside that first page.
-  let selectedRecordExists = !type;
-  if (validFilter && type === "invoice") {
-    const selected = await supabase.from("invoices")
-      .select("id, reference_number, vendor_id, property_id, deleted_at")
-      .eq("id", requestedId).maybeSingle();
-    if (selected.error) throw selected.error;
-    selectedRecordExists = Boolean(selected.data);
-    if (selected.data) {
-      const invoice = selected.data;
-      if (!invoiceResult.data.some((row) => row.id === invoice.id)) invoiceResult.data.push(invoice);
-      const [vendor, property] = await Promise.all([
-        supabase.from("vendors").select("id, name, deleted_at").eq("id", invoice.vendor_id).maybeSingle(),
-        supabase.from("properties").select("id, name, deleted_at").eq("id", invoice.property_id).maybeSingle(),
-      ]);
-      if (vendor.error) throw vendor.error;
-      if (property.error) throw property.error;
-      if (vendor.data && !vendorResult.data.some((row) => row.id === invoice.vendor_id)) vendorResult.data.push(vendor.data);
-      if (property.data && !propertyResult.data.some((row) => row.id === invoice.property_id)) propertyResult.data.push(property.data);
-    }
-  } else if (validFilter && type === "actor") {
-    const selected = await supabase.from("profiles").select("id, name")
-      .eq("id", requestedId).maybeSingle();
-    if (selected.error) throw selected.error;
-    selectedRecordExists = Boolean(selected.data);
-    if (selected.data && !profileResult.data.some((row) => row.id === requestedId)) profileResult.data.push(selected.data);
-  } else if (validFilter && (type === "vendor" || type === "property")) {
-    const selected = await supabase.from(type === "vendor" ? "vendors" : "properties")
-      .select("id, name, deleted_at").eq("id", requestedId).maybeSingle();
-    if (selected.error) throw selected.error;
-    selectedRecordExists = Boolean(selected.data);
-    const records = type === "vendor" ? vendorResult.data : propertyResult.data;
-    if (selected.data && !records.some((row) => row.id === requestedId)) {
-      records.push(selected.data);
-    }
+  let events: AuditEvent[] = [];
+  if (validFilter) {
+    let query = supabase.from("audit_events")
+      .select("id, actor_user_id, actor_type, action, occurred_at, changes, reason, invoice_id, vendor_id, property_id")
+      .order("occurred_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range((page - 1) * pageSize, page * pageSize);
+    if (type) query = query.eq(filterColumns[type], requestedId);
+    const result = await query;
+    if (result.error) throw result.error;
+    events = (result.data ?? []) as AuditEvent[];
   }
+  const hasNext = events.length > pageSize;
+  const visibleEvents = events.slice(0, pageSize);
+  const { invoiceResult, vendorResult, propertyResult, profileResult } = await loadEventRecords(
+    supabase, visibleEvents, validFilter && type ? { type, id: requestedId } : undefined,
+  );
 
   const vendors = new Map(vendorResult.data.map((vendor) => [vendor.id, vendor.name]));
   const properties = new Map(propertyResult.data.map((property) => [property.id, property.name]));
@@ -161,22 +131,8 @@ async function EventViewer({ searchParams }: Props) {
     property: propertyResult.data.map((property) => ({ id: property.id, label: `${property.name}${property.deleted_at ? " (archived)" : ""}` })),
     actor: profileResult.data.map((profile) => ({ id: profile.id, label: profile.name })),
   };
-  const validSelection = validFilter && selectedRecordExists;
-
-  let events: AuditEvent[] = [];
-  if (validSelection) {
-    let query = supabase.from("audit_events")
-      .select("id, actor_user_id, actor_type, action, occurred_at, changes, reason, invoice_id, vendor_id, property_id")
-      .order("occurred_at", { ascending: false })
-      .order("id", { ascending: false })
-      .range((page - 1) * pageSize, page * pageSize);
-    if (type) query = query.eq(filterColumns[type], requestedId);
-    const result = await query;
-    if (result.error) throw result.error;
-    events = (result.data ?? []) as AuditEvent[];
-  }
-  const hasNext = events.length > pageSize;
-  const visibleEvents = events.slice(0, pageSize);
+  // These options contain targeted ID lookups, not a capped picker list.
+  const validSelection = validFilter && (!type || options[type].some((option) => option.id === requestedId));
   const selectedLabel = type ? options[type].find((option) => option.id === requestedId)?.label : undefined;
 
   return (
