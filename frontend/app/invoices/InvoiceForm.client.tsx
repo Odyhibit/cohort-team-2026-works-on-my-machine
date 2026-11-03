@@ -9,6 +9,9 @@ import { invoiceStatusLabels } from "@/lib/invoices/status";
 import { ruleReasonLabel } from "@/lib/invoices/rule-reasons";
 import { approveInvoice, archiveInvoice, createInvoice, updateInvoice, type InvoiceInput } from "./actions";
 import ArchiveButton from "@/components/ArchiveButton.client";
+import AppDialog from "@/components/AppDialog.client";
+import VendorForm from "@/app/vendors/VendorForm.client";
+import PropertyForm from "@/app/properties/PropertyForm.client";
 import styles from "./invoice-form.module.scss";
 
 type Option = { id: string; name: string };
@@ -45,6 +48,10 @@ function uniqueMatch(options: Option[], name: string | null) {
   return matches.length === 1 ? matches[0] : undefined;
 }
 
+function mergeById<T extends Option>(base: T[], added: T[]) {
+  return [...base, ...added.filter((item) => !base.some((b) => b.id === item.id))];
+}
+
 function localDate() {
   const now = new Date();
   const year = now.getFullYear();
@@ -62,7 +69,7 @@ function paymentLink(value: string) {
   }
 }
 
-export function InvoiceFormClient({ vendors, properties, invoice, evaluation }: {
+export function InvoiceFormClient({ vendors: vendorsProp, properties: propertiesProp, invoice, evaluation }: {
   vendors: VendorOption[];
   properties: Option[];
   invoice?: { id: string; fields: Fields };
@@ -79,6 +86,13 @@ export function InvoiceFormClient({ vendors, properties, invoice, evaluation }: 
   const [extracting, setExtracting] = useState(false);
   const [validated, setValidated] = useState(false);
   const [saving, startSaving] = useTransition();
+  const [dialog, setDialog] = useState<"vendor" | "property" | null>(null);
+  const [dialogKey, setDialogKey] = useState(0);
+  const [unmatched, setUnmatched] = useState<{ vendor?: string; property?: string }>({});
+  const [addedVendors, setAddedVendors] = useState<VendorOption[]>([]);
+  const [addedProperties, setAddedProperties] = useState<Option[]>([]);
+  const vendors = mergeById(vendorsProp, addedVendors);
+  const properties = mergeById(propertiesProp, addedProperties);
   const [notification, setNotification] = useState<{ color: "danger" | "info" | "success"; message: string } | null>(null);
   const accountNumber = vendors.find((vendor) => vendor.id === fields.vendorId)?.account_number ?? "";
   const payUrl = paymentLink(fields.paymentUrl);
@@ -91,6 +105,11 @@ export function InvoiceFormClient({ vendors, properties, invoice, evaluation }: 
   const setField =
     (key: Exclude<keyof Fields, "status">) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setFields((prev) => ({ ...prev, [key]: e.target.value }));
+
+  function openDialog(kind: "vendor" | "property") {
+    setDialogKey((key) => key + 1);
+    setDialog(kind);
+  }
 
   function selectFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -123,6 +142,10 @@ export function InvoiceFormClient({ vendors, properties, invoice, evaluation }: 
       const details = result.details;
       const vendor = uniqueMatch(vendors, details.vendorName);
       const property = uniqueMatch(properties, details.propertyName);
+      setUnmatched({
+        vendor: !vendor && details.vendorName ? details.vendorName : undefined,
+        property: !property && details.propertyName ? details.propertyName : undefined,
+      });
       setFields((prev) => ({
         ...prev,
         vendorId: vendor?.id ?? "",
@@ -257,6 +280,8 @@ export function InvoiceFormClient({ vendors, properties, invoice, evaluation }: 
             : vendors.length === 0
               ? "Add a vendor before saving an invoice."
               : "Add a property before saving an invoice."}
+          {vendors.length === 0 && <button type="button" className="btn btn-link p-0 ms-2 align-baseline" onClick={() => openDialog("vendor")}>+ Add vendor</button>}
+          {properties.length === 0 && <button type="button" className="btn btn-link p-0 ms-2 align-baseline" onClick={() => openDialog("property")}>+ Add property</button>}
         </CAlert>
       )}
 
@@ -267,6 +292,9 @@ export function InvoiceFormClient({ vendors, properties, invoice, evaluation }: 
             <option value="" disabled>Choose a vendor</option>
             {vendors.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name}</option>)}
           </CFormSelect>
+          {!locked && !fields.vendorId && unmatched.vendor
+            ? <p className={styles.fieldHint}>No match for “{unmatched.vendor}”. <button type="button" className="btn btn-link p-0 align-baseline" onClick={() => openDialog("vendor")}>+ Add as new vendor</button></p>
+            : !locked && <p className={styles.fieldHint}>Not listed? <button type="button" className="btn btn-link p-0 align-baseline" onClick={() => openDialog("vendor")}>+ Add vendor</button></p>}
         </div>
         <div className={styles.field}>
           <CFormInput type="text" id="invoiceNumber" label="Reference number *" placeholder="e.g. BILL-1001" required value={fields.invoiceNumber} onChange={setField("invoiceNumber")} feedbackInvalid="Reference number is required." />
@@ -282,6 +310,9 @@ export function InvoiceFormClient({ vendors, properties, invoice, evaluation }: 
             <option value="" disabled>Choose a property</option>
             {properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}
           </CFormSelect>
+          {!locked && !fields.propertyId && unmatched.property
+            ? <p className={styles.fieldHint}>No match for “{unmatched.property}”. <button type="button" className="btn btn-link p-0 align-baseline" onClick={() => openDialog("property")}>+ Add as new property</button></p>
+            : !locked && <p className={styles.fieldHint}>Not listed? <button type="button" className="btn btn-link p-0 align-baseline" onClick={() => openDialog("property")}>+ Add property</button></p>}
         </div>
         <div className={styles.field}>
           <CFormInput type="text" id="accountNumber" label="Account number" value={accountNumber} placeholder="Set on vendor" readOnly />
@@ -346,6 +377,25 @@ export function InvoiceFormClient({ vendors, properties, invoice, evaluation }: 
         </div>
       </div>
       </section>
+
+      <AppDialog visible={dialog === "vendor"} onClose={() => setDialog(null)} title="Add vendor">
+        <VendorForm key={dialogKey} defaultName={unmatched.vendor} onCancel={() => setDialog(null)}
+          onSaved={(vendor) => {
+            setAddedVendors((prev) => [...prev, vendor]);
+            setFields((prev) => ({ ...prev, vendorId: vendor.id }));
+            setUnmatched((prev) => ({ ...prev, vendor: undefined }));
+            setDialog(null);
+          }} />
+      </AppDialog>
+      <AppDialog visible={dialog === "property"} onClose={() => setDialog(null)} title="Add property">
+        <PropertyForm key={dialogKey} defaultName={unmatched.property} onCancel={() => setDialog(null)}
+          onSaved={(property) => {
+            setAddedProperties((prev) => [...prev, property]);
+            setFields((prev) => ({ ...prev, propertyId: property.id }));
+            setUnmatched((prev) => ({ ...prev, property: undefined }));
+            setDialog(null);
+          }} />
+      </AppDialog>
     </div>
   );
 }
