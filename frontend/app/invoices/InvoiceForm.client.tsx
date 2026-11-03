@@ -375,7 +375,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
                 setNotification({ color: "danger", message: error instanceof Error ? error.message : "Could not approve invoice." });
               }
             })}>Approve</CButton>}
-          {invoice?.fields.status !== "paid" && (payUrl ? (
+          {invoice?.fields.status === "approved" && (payUrl ? (
             <a href={payUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary">Pay</a>
           ) : (
             <button type="button" disabled className="btn btn-outline-primary" title="Enter a valid payment URL to enable Pay">Pay</button>
