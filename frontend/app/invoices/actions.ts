@@ -4,6 +4,7 @@ import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import type { InvoiceStatus } from "@/lib/invoices/status";
+import { invoiceDocumentBucket } from "@/lib/invoices/document";
 
 const duplicateInvoiceIndex = "invoices_vendor_property_reference_unique_idx";
 
@@ -77,16 +78,26 @@ async function activeReferences(supabase: Awaited<ReturnType<typeof createClient
 
 export type CreatedInvoice = { id: string; status: "approved" | "waiting on approval"; reasons: string[] };
 
-export async function createInvoice(input: Omit<InvoiceInput, "status">): Promise<{ error: string } | CreatedInvoice> {
+export async function createInvoice(input: Omit<InvoiceInput, "status">, document?: { path: string; name: string }): Promise<{ error: string } | CreatedInvoice> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) throw new Error("Unauthorized");
 
+  if (document && (typeof document.path !== "string" || !document.path.startsWith(`${data.claims.sub}/`)
+    || typeof document.name !== "string" || !document.name.trim() || document.name.length > 255)) {
+    return { error: "Invalid invoice document." };
+  }
+  async function fail(message: string) {
+    if (document) {
+      const cleanup = await supabase.storage.from(invoiceDocumentBucket).remove([document.path]);
+      if (cleanup.error) console.error("Could not clean up unattached invoice document", cleanup.error.message);
+    }
+    return { error: message };
+  }
   const validated = validatedInvoice(input);
-  if ("error" in validated) return validated;
-  if (typeof input.date !== "string" || !isoDate.test(input.date)) return { error: "Invalid invoice date." };
-
-  const { data: created, error } = await supabase.rpc("create_invoice_with_rules", {
+  if ("error" in validated) return fail(validated.error);
+  if (typeof input.date !== "string" || !isoDate.test(input.date)) return fail("Invalid invoice date.");
+  const { data: created, error } = await supabase.rpc("create_invoice_with_document", {
     p_date: input.date,
     p_reference_number: validated.values.reference_number,
     p_vendor_id: validated.values.vendor_id,
@@ -94,8 +105,12 @@ export async function createInvoice(input: Omit<InvoiceInput, "status">): Promis
     p_amount: validated.values.amount,
     p_due_date: validated.values.due_date,
     p_payment_url: validated.values.payment_url,
+    p_document_path: document?.path ?? null,
+    p_document_name: document?.name ?? null,
   });
-  if (error) return { error: invoiceSaveError(error) };
+  if (error) {
+    return fail(invoiceSaveError(error));
+  }
   const result = created as CreatedInvoice | null;
   if (!result?.id || !result.status || !Array.isArray(result.reasons)) {
     return { error: "Invoice was saved, but its approval result could not be read. Check the invoice list before trying again." };
@@ -160,6 +175,42 @@ export async function approveInvoice(id: string): Promise<{ error: string } | un
   refresh();
 }
 
+type ConfirmationState = { value: string; error: string } | undefined;
+
+type ReopenState = { reason: string; error: string } | undefined;
+
+export async function reopenInvoice(_previous: ReopenState, formData: FormData): Promise<ReopenState> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) throw new Error("Unauthorized");
+  const id = String(formData.get("id") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!uuid.test(id) || !reason || reason.length > 500) return { reason, error: "Enter a reason of up to 500 characters." };
+  const { error } = await supabase.rpc("reopen_invoice_for_correction", { p_invoice_id: id, p_reason: reason });
+  if (error) return { reason, error: error.message };
+  revalidatePath("/invoices");
+  revalidatePath(`/invoices/${id}/edit`);
+  revalidatePath("/");
+  revalidatePath("/events");
+  redirect(`/invoices/${id}/edit`);
+}
+
+export async function savePaymentConfirmation(_previous: ConfirmationState, formData: FormData): Promise<ConfirmationState> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) throw new Error("Unauthorized");
+  const id = String(formData.get("id") ?? "");
+  const value = String(formData.get("confirmation") ?? "").trim();
+  if (!uuid.test(id) || !value || value.length > 200) return { value, error: "Enter a confirmation number of up to 200 characters." };
+  const { error } = await supabase.rpc("save_invoice_payment_confirmation", { p_invoice_id: id, p_confirmation: value });
+  if (error) return { value, error: error.message };
+  revalidatePath("/invoices");
+  revalidatePath("/");
+  revalidatePath(`/invoices/${id}/edit`);
+  revalidatePath("/events");
+  redirect("/invoices");
+}
+
 export async function archiveInvoice(_prev: { error: string } | undefined, formData: FormData): Promise<{ error: string } | undefined> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -171,6 +222,7 @@ export async function archiveInvoice(_prev: { error: string } | undefined, formD
   const { error } = await supabase.from("invoices")
     .update({ deleted_at: new Date().toISOString(), deleted_by: data.claims.sub })
     .eq("id", id)
+    .neq("status", "paid")
     .is("deleted_at", null)
     .select("id")
     .single();

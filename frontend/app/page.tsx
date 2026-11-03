@@ -94,6 +94,7 @@ async function DashboardContent() {
       "id, reference_number, amount, due_date, status, vendor:vendors(name), property:properties(name)"
     )
     .is("deleted_at", null)
+    .neq("status", "paid")
     .order("due_date", { ascending: true })
     .overrideTypes<InvoiceRow[], { merge: false }>();
 
@@ -124,17 +125,12 @@ async function DashboardContent() {
       invoice.status === "waiting on approval"
   ).length;
 
-  const paid = invoiceList.filter(
-    (invoice) => invoice.status === "paid"
+  const approved = invoiceList.filter(
+    (invoice) => invoice.status === "approved"
   ).length;
 
-  // Find unpaid invoices
-  const unpaidInvoices = invoiceList.filter(
-    (invoice) => invoice.status !== "paid"
-  );
-
   // Calculate invoices due in seven days
-  const dueInSevenDays = unpaidInvoices.filter(
+  const dueInSevenDays = invoiceList.filter(
     (invoice) =>
       invoice.due_date !== null &&
       invoice.due_date >= today &&
@@ -148,7 +144,7 @@ async function DashboardContent() {
   );
 
   // Five earliest-due unpaid invoices
-  const dueSoon = unpaidInvoices
+  const dueSoon = invoiceList
     .filter((invoice) => invoice.due_date !== null)
     .sort((a, b) =>
       (a.due_date ?? "").localeCompare(b.due_date ?? "")
@@ -165,7 +161,7 @@ async function DashboardContent() {
         dueInSevenDays: dueInSevenDays.length,
         dueTotal,
         awaitingApproval,
-        paid,
+        approved,
       }}
       dueSoon={dueSoon}
     />
