@@ -40,7 +40,7 @@ type DashboardStats = {
   dueInSevenDays: number;
   dueTotal: number;
   awaitingApproval: number;
-  paid: number;
+  approved: number;
 };
 
 type DashboardProps = {
@@ -112,8 +112,8 @@ export default function Dashboard({
       subtitle: "",
     },
     {
-      label: "Paid",
-      value: stats.paid,
+      label: "Approved",
+      value: stats.approved,
       colorClass: "text-success",
       subtitle: "",
     },

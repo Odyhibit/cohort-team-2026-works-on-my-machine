@@ -7,11 +7,13 @@ import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
 import type { InvoiceDetails } from "@/lib/invoices/invoice-parser";
 import { invoiceStatusLabels } from "@/lib/invoices/status";
 import { ruleReasonLabel } from "@/lib/invoices/rule-reasons";
-import { approveInvoice, archiveInvoice, createInvoice, updateInvoice, type InvoiceInput } from "./actions";
-import ArchiveButton from "@/components/ArchiveButton.client";
+import { approveInvoice, createInvoice, updateInvoice, type InvoiceInput } from "./actions";
 import AppDialog from "@/components/AppDialog.client";
 import VendorForm from "@/app/vendors/VendorForm.client";
 import PropertyForm from "@/app/properties/PropertyForm.client";
+import InvoiceDocumentPreview from "./InvoiceDocumentPreview";
+import PaymentConfirmation from "./PaymentConfirmation.client";
+import InvoiceMoreActions from "./InvoiceMoreActions.client";
 import styles from "./invoice-form.module.scss";
 
 type Option = { id: string; name: string };
@@ -69,11 +71,13 @@ function paymentLink(value: string) {
   }
 }
 
-export function InvoiceFormClient({ vendors: vendorsProp, properties: propertiesProp, invoice, evaluation }: {
+export function InvoiceFormClient({ vendors: vendorsProp, properties: propertiesProp, invoice, evaluation, document, paymentConfirmation }: {
   vendors: VendorOption[];
   properties: Option[];
   invoice?: { id: string; fields: Fields };
   evaluation?: Evaluation | null;
+  document?: { url?: string; mime?: string; name?: string; error?: string };
+  paymentConfirmation?: string | null;
 }) {
   const router = useRouter();
   const [fields, setFields] = useState<Fields>(invoice?.fields ?? initialFields);
@@ -120,6 +124,19 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
     if (file && (file.type === "application/pdf" || /\.pdf$/i.test(file.name))) void extractDetails(file);
   }
 
+  async function saveNewInvoice(details: Omit<InvoiceInput, "status">, file?: File | null) {
+    let attachment: { path: string; name: string } | undefined;
+    if (file) {
+      const upload = new FormData();
+      upload.append("file", file);
+      const response = await fetch("/api/invoices/document", { method: "POST", body: upload });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Could not upload invoice document.");
+      attachment = { path: result.path, name: result.name };
+    }
+    return createInvoice(details, attachment);
+  }
+
   async function extractDetails(file: File) {
     if (extractingRef.current) return;
     if (file.size > 4 * 1024 * 1024) {
@@ -156,7 +173,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
         paymentUrl: details.paymentUrl ?? "",
       }));
       if (vendor && property && details.invoiceNumber && details.amountDue && details.dueDate) {
-        const saved = await createInvoice({
+        const saved = await saveNewInvoice({
           date: localDate(),
           vendorId: vendor.id,
           propertyId: property.id,
@@ -164,7 +181,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
           amountDue: details.amountDue,
           dueDate: details.dueDate,
           paymentUrl: details.paymentUrl ?? "",
-        });
+        }, file);
         if ("error" in saved) throw new Error(saved.error);
         router.push(`/invoices/${saved.id}/edit`);
         return;
@@ -210,7 +227,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
           if (result) { setNotification({ color: "danger", message: result.error }); return; }
           router.push("/invoices");
         } else {
-          const result = await createInvoice({ ...details, date: localDate() });
+          const result = await saveNewInvoice({ ...details, date: localDate() }, selectedFile);
           if ("error" in result) { setNotification({ color: "danger", message: result.error }); return; }
           router.push(`/invoices/${result.id}/edit`);
         }
@@ -224,48 +241,25 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
   };
 
   return (
-    <div className={`${styles.layout} ${invoice ? styles.layoutEdit : ""}`}>
-      {!invoice && <section className={styles.previewPanel} aria-label="Invoice file preview">
-        <div className={styles.previewHeader}>
-          <strong className={styles.fileName}>{selectedFile?.name ?? "Invoice file"}</strong>
+    <div className={styles.layout}>
+      <InvoiceDocumentPreview
+        url={invoice ? document?.url : previewUrl}
+        mime={invoice ? document?.mime : previewType}
+        name={invoice ? document?.name : selectedFile?.name}
+        error={document?.error}
+      >
+        {!invoice ? <>
           <label className={`btn btn-outline-secondary ${styles.fileButton}`}>
-            {selectedFile ? "Change file" : "Choose file"}
-            <input
-              ref={fileInputRef}
-              className="visually-hidden"
-              type="file"
-              accept=".pdf,image/*"
-              disabled={extracting}
-              onChange={selectFile}
-              aria-label="Choose invoice PDF or image"
-            />
+            {selectedFile ? "Change file" : "Choose PDF or image"}
+            <input ref={fileInputRef} className="visually-hidden" type="file"
+              accept=".pdf,image/png,image/jpeg,image/webp,image/gif" disabled={extracting || saving}
+              onChange={selectFile} aria-label="Choose invoice PDF or image" />
           </label>
-        </div>
-        <div className={styles.previewSurface}>
-          {previewUrl ? (
-            <object className={styles.preview} data={previewUrl} type={previewType} aria-label="Selected invoice preview">
-              <a href={previewUrl} target="_blank" rel="noreferrer">Open invoice preview</a>
-            </object>
-          ) : (
-            <div className={styles.previewEmpty}>
-              <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
-                <path d="M14 2v5a1 1 0 0 0 1 1h5" />
-              </svg>
-              <p className="fw-semibold mb-1">Preview an invoice here</p>
-              <p className="text-body-secondary mb-0">Choose a PDF to extract and save an invoice automatically, or an image for reference while entering details.</p>
-            </div>
-          )}
-        </div>
-        <div className={styles.previewFooter}>
-          {selectedFile && (selectedFile.type === "application/pdf" || /\.pdf$/i.test(selectedFile.name)) && (
-            <CButton color="secondary" type="button" disabled={extracting} onClick={() => selectedFile && void extractDetails(selectedFile)}>
-              {extracting ? "Extracting and saving…" : "Retry PDF extraction"}
-            </CButton>
-          )}
-          <p className="mb-0 small text-body-secondary">Preview only. The file is not saved with the invoice.</p>
-        </div>
-      </section>}
+          {selectedFile && /\.pdf$/i.test(selectedFile.name) && <CButton color="secondary" type="button" disabled={extracting || saving}
+            onClick={() => void extractDetails(selectedFile)}>{extracting ? "Extracting and saving…" : "Retry PDF extraction"}</CButton>}
+          <p className="small mb-0">PDFs are extracted automatically. Images are saved when you save the invoice.</p>
+        </> : <button type="button" className="btn btn-outline-secondary" onClick={() => router.refresh()}>Refresh document</button>}
+      </InvoiceDocumentPreview>
 
       <section className={styles.formPanel} aria-labelledby="invoice-form-heading">
 
@@ -351,8 +345,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
       </CForm>
       <div className={styles.actions}>
         <div className={styles.actionGroup}>
-          {invoice && <Link href={`/events?type=invoice&id=${invoice.id}`} className="btn btn-outline-secondary">History</Link>}
-          {invoice && <ArchiveButton action={archiveInvoice} id={invoice.id} name={invoice.fields.invoiceNumber} />}
+          {invoice && <InvoiceMoreActions id={invoice.id} name={invoice.fields.invoiceNumber} status={invoice.fields.status} />}
           {invoice && invoice.fields.status === "waiting on approval" &&
             <CButton color="success" type="button" disabled={saving} onClick={() => startSaving(async () => {
               try {
@@ -363,11 +356,11 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
                 setNotification({ color: "danger", message: error instanceof Error ? error.message : "Could not approve invoice." });
               }
             })}>Approve</CButton>}
-          {payUrl ? (
+          {invoice?.fields.status !== "paid" && (payUrl ? (
             <a href={payUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary">Pay</a>
           ) : (
             <button type="button" disabled className="btn btn-outline-primary" title="Enter a valid payment URL to enable Pay">Pay</button>
-          )}
+          ))}
         </div>
         <div className={styles.actionGroup}>
           <Link href="/invoices" className="btn btn-outline-secondary">Cancel</Link>
@@ -376,6 +369,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
           </CButton>}
         </div>
       </div>
+      {invoice && locked && <PaymentConfirmation invoiceId={invoice.id} confirmation={paymentConfirmation ?? null} readOnly={invoice.fields.status === "paid"} />}
       </section>
 
       <AppDialog visible={dialog === "vendor"} onClose={() => setDialog(null)} title="Add vendor">

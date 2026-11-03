@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { isInvoiceStatus } from "@/lib/invoices/status";
 import { InvoiceFormClient } from "../../InvoiceForm.client";
 import styles from "../../invoice-form.module.scss";
+import { invoiceDocumentBucket } from "@/lib/invoices/document";
 
 type Props = { params: Promise<{ id: string }> };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -37,7 +38,7 @@ async function InvoiceEditor({ params }: Props) {
 
   const [invoiceResult, vendorResult, propertyResult, evaluationResult] = await Promise.all([
     supabase.from("invoices")
-      .select("id, reference_number, vendor_id, property_id, amount, due_date, payment_url, status")
+      .select("id, reference_number, vendor_id, property_id, amount, due_date, payment_url, status, document_path, document_name, document_mime_type, payment_confirmation_number")
       .eq("id", id)
       .is("deleted_at", null)
       .maybeSingle(),
@@ -58,6 +59,17 @@ async function InvoiceEditor({ params }: Props) {
   if (!invoice) notFound();
   if (!isInvoiceStatus(invoice.status)) throw new Error("Invoice has an unsupported status.");
 
+  let document: { url?: string; mime?: string; name?: string; error?: string } | undefined;
+  if (invoice.document_path) {
+    const signed = await supabase.storage.from(invoiceDocumentBucket).createSignedUrl(invoice.document_path, 3600);
+    document = {
+      url: signed.data?.signedUrl,
+      mime: invoice.document_mime_type ?? undefined,
+      name: invoice.document_name ?? undefined,
+      error: signed.error ? "Could not load this document. Refresh to try again." : undefined,
+    };
+  }
+
   const vendors = vendorResult.data
     .filter((vendor) => !vendor.deleted_at || vendor.id === invoice.vendor_id)
     .map((vendor) => ({ id: vendor.id, name: vendor.deleted_at ? `${vendor.name} (archived)` : vendor.name, account_number: vendor.account_number }));
@@ -66,10 +78,12 @@ async function InvoiceEditor({ params }: Props) {
     .map((property) => ({ id: property.id, name: property.deleted_at ? `${property.name} (archived)` : property.name }));
 
   return <InvoiceFormClient
-    key={JSON.stringify(invoice)}
+    key={JSON.stringify({ ...invoice, payment_confirmation_number: undefined })}
     vendors={vendors}
     properties={properties}
     evaluation={evaluationResult.data}
+    document={document}
+    paymentConfirmation={invoice.payment_confirmation_number}
     invoice={{
       id: invoice.id,
       fields: {

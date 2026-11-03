@@ -48,9 +48,9 @@ For automatic intake, assume the extractor's returned values are factually corre
 
 All signed-in users have the same application permissions: enter invoices, edit rule settings, and manually approve waiting invoices. Accounts default to `admin` in the existing user workflow, but rules access requires authentication rather than a particular profile role. Audit events still identify the individual actor.
 
-Status changes continue through the database functions. The approval action accepts only active invoices in `waiting on approval`; arbitrary status writes remain blocked. A future payment worker may set `paid` only after verified payment confirmation.
+Status changes continue through the database functions. The approval action accepts only active invoices in `waiting on approval`; arbitrary status writes remain blocked. The manual workflow now records a confirmation number and sets `paid` in one operation. Paid invoices leave active lists and become read-only. A future payment worker can use the same confirmation operation after verifying the external result.
 
-Corrections to an already approved invoice need an explicit reopen/review path so a changed amount does not inherit an old approval. The form has no unrestricted status dropdown.
+More actions contains History, Archive, and (for approved invoices) Reopen for correction. Reopening requires a reason, atomically records it with the status change, and returns the invoice to waiting on approval. Users save corrections and explicitly approve again; automatic rules do not rerun on edits. Paid invoices cannot be reopened. The form has no unrestricted status dropdown.
 
 ## Target files
 
@@ -79,7 +79,7 @@ Corrections to an already approved invoice need an explicit reopen/review path s
 | Is review required before evaluation? | No. A complete, valid extraction flows directly into invoice creation and rule evaluation. Invalid or unmatched fields require correction before an invoice can be created. |
 | What counts as a comparable bill? | Same vendor/property, nonarchived, approved or paid, and earlier invoice date, including existing records and fake past invoices. Confirm same-day and manually approved bills. |
 | What happens if history is short, settings are missing, or autopay is off? | Set `waiting on approval` with the reason; never auto approve from incomplete evidence. |
-| Who may change status? | Any signed-in user may manually approve a waiting invoice. The future verified payment workflow sets `paid`; manual paid reconciliation is still a later decision. |
+| Who may change status? | Any signed-in user may manually approve a waiting invoice. Saving a confirmation on an approved invoice sets `paid`; paid invoices are retained read-only. A future payment worker will supply its verified confirmation through the same operation. |
 | When should AI-assisted payment start? | After approval and only for autopay vendors. Confirm provider, authorization, and whether manual approval may also start it. |
 
 ## Out of scope for the first rules increment
