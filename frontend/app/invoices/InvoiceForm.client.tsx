@@ -5,14 +5,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
 import type { InvoiceDetails } from "@/lib/invoices/invoice-parser";
-import { invoiceStatuses, invoiceStatusLabels, type InvoiceStatus } from "@/lib/invoices/status";
-import { archiveInvoice, createInvoice, updateInvoice, type InvoiceInput } from "./actions";
+import { invoiceStatusLabels } from "@/lib/invoices/status";
+import { ruleReasonLabel } from "@/lib/invoices/rule-reasons";
+import { approveInvoice, archiveInvoice, createInvoice, updateInvoice, type InvoiceInput } from "./actions";
 import ArchiveButton from "@/components/ArchiveButton.client";
 import styles from "./invoice-form.module.scss";
 
 type Option = { id: string; name: string };
 type VendorOption = Option & { account_number: string | null };
 type Fields = Omit<InvoiceInput, "date">;
+type Evaluation = {
+  outcome: string;
+  reasons: string[];
+  evaluated_amount: number;
+  comparable_count: number;
+  comparable_average: number | null;
+  max_auto_approval_amount: number | null;
+  max_above_average_percent: number | null;
+  min_comparable_bills: number | null;
+};
 
 const initialFields: Fields = {
   vendorId: "",
@@ -51,15 +62,17 @@ function paymentLink(value: string) {
   }
 }
 
-export function InvoiceFormClient({ vendors, properties, invoice }: {
+export function InvoiceFormClient({ vendors, properties, invoice, evaluation }: {
   vendors: VendorOption[];
   properties: Option[];
   invoice?: { id: string; fields: Fields };
+  evaluation?: Evaluation | null;
 }) {
   const router = useRouter();
   const [fields, setFields] = useState<Fields>(invoice?.fields ?? initialFields);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const extractingRef = useRef(false);
   const formId = useId();
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewType, setPreviewType] = useState("");
@@ -69,6 +82,7 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
   const [notification, setNotification] = useState<{ color: "danger" | "info" | "success"; message: string } | null>(null);
   const accountNumber = vendors.find((vendor) => vendor.id === fields.vendorId)?.account_number ?? "";
   const payUrl = paymentLink(fields.paymentUrl);
+  const locked = invoice?.fields.status === "approved" || invoice?.fields.status === "paid";
 
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
@@ -84,20 +98,22 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
     setPreviewType(file?.type ?? "");
     setPreviewUrl(file ? URL.createObjectURL(file) : "");
     setNotification(null);
+    if (file && (file.type === "application/pdf" || /\.pdf$/i.test(file.name))) void extractDetails(file);
   }
 
-  async function extractDetails() {
-    if (!selectedFile || extracting) return;
-    if (selectedFile.size > 4 * 1024 * 1024) {
+  async function extractDetails(file: File) {
+    if (extractingRef.current) return;
+    if (file.size > 4 * 1024 * 1024) {
       setNotification({ color: "danger", message: "Choose a PDF smaller than 4 MB for extraction." });
       return;
     }
+    extractingRef.current = true;
     setExtracting(true);
     setNotification(null);
 
     try {
       const formData = new FormData();
-      formData.append("file", selectedFile);
+      formData.append("file", file);
       const response = await fetch("/api/invoices/extract", { method: "POST", body: formData });
       const result = await response.json().catch(() => ({})) as { details?: InvoiceDetails; error?: string };
       if (!response.ok || !result.details) {
@@ -116,13 +132,27 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
         dueDate: details.dueDate ?? "",
         paymentUrl: details.paymentUrl ?? "",
       }));
+      if (vendor && property && details.invoiceNumber && details.amountDue && details.dueDate) {
+        const saved = await createInvoice({
+          date: localDate(),
+          vendorId: vendor.id,
+          propertyId: property.id,
+          invoiceNumber: details.invoiceNumber,
+          amountDue: details.amountDue,
+          dueDate: details.dueDate,
+          paymentUrl: details.paymentUrl ?? "",
+        });
+        if ("error" in saved) throw new Error(saved.error);
+        router.push(`/invoices/${saved.id}/edit`);
+        return;
+      }
       const problems = [
         !vendor && (details.vendorName ? `No unique vendor match for “${details.vendorName}”.` : "Vendor not found in the PDF."),
         !property && (details.propertyName ? `No unique property match for “${details.propertyName}”.` : "Property not found in the PDF."),
       ].filter(Boolean);
       setNotification({
         color: "info",
-        message: `Details extracted. ${problems.join(" ")} Review every field before saving.`.replace(/\s+/g, " "),
+        message: `Details extracted, but automatic intake needs correction. ${problems.join(" ")} Complete the missing fields and save.`.replace(/\s+/g, " "),
       });
     } catch (error) {
       setNotification({
@@ -130,6 +160,7 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
         message: error instanceof Error ? error.message : "Could not extract invoice details.",
       });
     } finally {
+      extractingRef.current = false;
       setExtracting(false);
     }
   }
@@ -143,21 +174,22 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
 
     startSaving(async () => {
       try {
-        const result = invoice
-          ? await updateInvoice(invoice.id, fields)
-          : await createInvoice({ ...fields, date: localDate() });
-        if (result) {
-          setNotification({ color: "danger", message: result.error });
-        } else if (invoice) {
+        const details = {
+          vendorId: fields.vendorId,
+          propertyId: fields.propertyId,
+          invoiceNumber: fields.invoiceNumber,
+          amountDue: fields.amountDue,
+          dueDate: fields.dueDate,
+          paymentUrl: fields.paymentUrl,
+        };
+        if (invoice) {
+          const result = await updateInvoice(invoice.id, details);
+          if (result) { setNotification({ color: "danger", message: result.error }); return; }
           router.push("/invoices");
         } else {
-          setNotification({ color: "success", message: "Invoice saved." });
-          setFields(initialFields);
-          setSelectedFile(null);
-          setPreviewUrl("");
-          setPreviewType("");
-          if (fileInputRef.current) fileInputRef.current.value = "";
-          setValidated(false);
+          const result = await createInvoice({ ...details, date: localDate() });
+          if ("error" in result) { setNotification({ color: "danger", message: result.error }); return; }
+          router.push(`/invoices/${result.id}/edit`);
         }
       } catch (error) {
         setNotification({
@@ -198,14 +230,14 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
                 <path d="M14 2v5a1 1 0 0 0 1 1h5" />
               </svg>
               <p className="fw-semibold mb-1">Preview an invoice here</p>
-              <p className="text-body-secondary mb-0">Choose a PDF or image to review while entering the details.</p>
+              <p className="text-body-secondary mb-0">Choose a PDF to extract and save an invoice automatically, or an image for reference while entering details.</p>
             </div>
           )}
         </div>
         <div className={styles.previewFooter}>
           {selectedFile && (selectedFile.type === "application/pdf" || /\.pdf$/i.test(selectedFile.name)) && (
-            <CButton color="secondary" type="button" disabled={extracting} onClick={() => void extractDetails()}>
-              {extracting ? "Extracting…" : "Extract details from PDF"}
+            <CButton color="secondary" type="button" disabled={extracting} onClick={() => selectedFile && void extractDetails(selectedFile)}>
+              {extracting ? "Extracting and saving…" : "Retry PDF extraction"}
             </CButton>
           )}
           <p className="mb-0 small text-body-secondary">Preview only. The file is not saved with the invoice.</p>
@@ -215,6 +247,8 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
       <section className={styles.formPanel} aria-labelledby="invoice-form-heading">
 
       <CForm id={formId} noValidate validated={validated} onSubmit={handleSave}>
+
+      {locked && <CAlert color="info">This invoice is {invoiceStatusLabels[invoice.fields.status]}. Its details are locked after approval.</CAlert>}
 
       {(vendors.length === 0 || properties.length === 0) && (
         <CAlert color="warning">
@@ -226,6 +260,7 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
         </CAlert>
       )}
 
+      <fieldset disabled={locked} className="border-0 p-0 m-0">
       <div className={styles.fieldGrid}>
         <div className={styles.field}>
           <CFormSelect id="vendorId" name="vendor_id" label="Vendor *" required disabled={vendors.length === 0} value={fields.vendorId} onChange={setField("vendorId")} feedbackInvalid="Choose a vendor.">
@@ -256,11 +291,19 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
           <CFormInput type="url" id="paymentUrl" name="payment_url" label="Payment URL (optional)" placeholder="https://example.com/invoice" value={fields.paymentUrl} onChange={setField("paymentUrl")} feedbackInvalid="Enter a valid URL." />
         </div>
         <div className={styles.field}>
-          <CFormSelect id="status" name="status" label="Status *" value={fields.status} onChange={(e) => setFields((prev) => ({ ...prev, status: e.target.value as InvoiceStatus }))}>
-            {invoiceStatuses.map((status) => <option key={status} value={status}>{invoiceStatusLabels[status]}</option>)}
-          </CFormSelect>
+          <CFormInput type="text" id="status" label="Status" value={invoice ? invoiceStatusLabels[fields.status] : "Set by approval rules on save"} readOnly />
         </div>
       </div>
+      </fieldset>
+
+      {evaluation && <div className="alert alert-light border mt-4 mb-0" role="status">
+        <strong>{evaluation.outcome === "approved" ? "Initial rules: approved" : "Initial rules: needed approval"}</strong>
+        {evaluation.reasons.length > 0 && <ul className="mb-0 mt-2">
+          {evaluation.reasons.map((reason) => <li key={reason}>{ruleReasonLabel(reason)}</li>)}
+        </ul>}
+        <p className="small mb-0 mt-2">At intake: ${Number(evaluation.evaluated_amount).toFixed(2)}. Limit: {evaluation.max_auto_approval_amount === null ? "unset" : `$${Number(evaluation.max_auto_approval_amount).toFixed(2)}`}.</p>
+        <p className="small mb-0">Comparable bills: {evaluation.comparable_count} (minimum {evaluation.min_comparable_bills ?? "unset"}). Average: {evaluation.comparable_average === null ? "—" : `$${Number(evaluation.comparable_average).toFixed(2)}`}. Allowed above average: {evaluation.max_above_average_percent === null ? "unset" : `${evaluation.max_above_average_percent}%`}.</p>
+      </div>}
 
       {notification && (
         <CAlert
@@ -279,6 +322,16 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
         <div className={styles.actionGroup}>
           {invoice && <Link href={`/events?type=invoice&id=${invoice.id}`} className="btn btn-outline-secondary">History</Link>}
           {invoice && <ArchiveButton action={archiveInvoice} id={invoice.id} name={invoice.fields.invoiceNumber} />}
+          {invoice && invoice.fields.status === "waiting on approval" &&
+            <CButton color="success" type="button" disabled={saving} onClick={() => startSaving(async () => {
+              try {
+                const result = await approveInvoice(invoice.id);
+                if (result) setNotification({ color: "danger", message: result.error });
+                else router.refresh();
+              } catch (error) {
+                setNotification({ color: "danger", message: error instanceof Error ? error.message : "Could not approve invoice." });
+              }
+            })}>Approve</CButton>}
           {payUrl ? (
             <a href={payUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary">Pay</a>
           ) : (
@@ -287,9 +340,9 @@ export function InvoiceFormClient({ vendors, properties, invoice }: {
         </div>
         <div className={styles.actionGroup}>
           <Link href="/invoices" className="btn btn-outline-secondary">Cancel</Link>
-          <CButton color="primary" type="submit" form={formId} disabled={saving || extracting || vendors.length === 0 || properties.length === 0}>
+          {!locked && <CButton color="primary" type="submit" form={formId} disabled={saving || extracting || vendors.length === 0 || properties.length === 0}>
             {saving ? "Saving…" : invoice ? "Save changes" : "Save bill"}
-          </CButton>
+          </CButton>}
         </div>
       </div>
       </section>

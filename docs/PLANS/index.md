@@ -4,7 +4,7 @@ Implementation plans for upcoming work. Each plan lists its status, the files it
 
 | Plan | Status | Summary |
 |---|---|---|
-| _None yet_ | | |
+| [invoice-approval-rules.md](./invoice-approval-rules.md) | Draft | Evaluate new invoices at intake, protect status transitions, then add AI extraction and payment integrations |
 
 ## Adding a plan
 
