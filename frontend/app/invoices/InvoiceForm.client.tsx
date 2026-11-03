@@ -116,6 +116,20 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
     setDialog(kind);
   }
 
+  function resetNewInvoice() {
+    setFields({ ...initialFields });
+    setSelectedFile(null);
+    setPreviewUrl("");
+    setPreviewType("");
+    setValidated(false);
+    setNotification(null);
+    setUnmatched({});
+    setDialog(null);
+    setAddedVendors([]);
+    setAddedProperties([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   function selectFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     setSelectedFile(file ?? null);
@@ -135,7 +149,11 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
       if (!response.ok) throw new Error(result.error ?? "Could not upload invoice document.");
       attachment = { path: result.path, name: result.name };
     }
-    return createInvoice(details, attachment);
+    const result = await createInvoice(details, attachment);
+    // Next.js can retain this form's state when navigating back to /new.
+    // Reset after success, before either creation path navigates away.
+    if (!("error" in result)) resetNewInvoice();
+    return result;
   }
 
   async function extractDetails(file: File) {

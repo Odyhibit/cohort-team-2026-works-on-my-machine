@@ -116,6 +116,7 @@ export async function createInvoice(input: Omit<InvoiceInput, "status">, documen
     return { error: "Invoice was saved, but its approval result could not be read. Check the invoice list before trying again." };
   }
   revalidatePath("/invoices");
+  revalidatePath("/invoices/new");
   revalidatePath("/");
   revalidatePath("/events");
   refresh();

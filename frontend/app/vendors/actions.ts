@@ -31,11 +31,11 @@ export async function saveVendor(_prev: FormState, formData: FormData): Promise<
   if (error) return { error: error.message, values: submitted };
 
   revalidatePath("/vendors");
+  revalidatePath("/vendors/new");
   if (id) revalidatePath(`/vendors/${id}/edit`);
   revalidatePath("/events");
   refresh();
-  if (formData.get("embedded") === "1") return { saved: row };
-  redirect("/vendors");
+  return { saved: row };
 }
 
 export async function archiveVendor(_prev: FormState, formData: FormData): Promise<{ error: string } | undefined> {

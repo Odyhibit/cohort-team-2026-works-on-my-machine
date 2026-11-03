@@ -1,16 +1,21 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { createUser } from "./actions";
+import { createUser, type CreateUserState } from "./actions";
 import UserRoleSelect from "../UserRoleSelect";
 
 export default function CreateUserForm() {
-  const [state, formAction, pending] = useActionState(createUser, undefined);
+  const [formVersion, setFormVersion] = useState(0);
+  const [state, formAction, pending] = useActionState(async (previous: CreateUserState, formData: FormData) => {
+    const result = await createUser(previous, formData);
+    if (result && "created" in result) setFormVersion((version) => version + 1);
+    return result;
+  }, undefined);
   const values = state && "values" in state ? state.values : undefined;
 
   return (
-    <form action={formAction} className="card card-body d-grid gap-3">
+    <form key={formVersion} action={formAction} className="card card-body d-grid gap-3">
       <h2 className="h5 mb-0">User details</h2>
       {state && "error" in state && <p role="alert" className="alert alert-danger mb-0">{state.error}</p>}
       {state && "created" in state && <p role="status" className="alert alert-success mb-0">
@@ -21,10 +26,10 @@ export default function CreateUserForm() {
         {state.created.roleWarning} {state.created.userId && <Link href={`/users/${state.created.userId}/edit`}>Edit user</Link>}
       </p>}
       <label className="form-label">Name
-        <input type="text" name="name" required autoComplete="off" defaultValue={values?.name} className="form-control mt-1" />
+        <input type="text" name="name" required autoComplete="off" defaultValue={values?.name ?? ""} className="form-control mt-1" />
       </label>
       <label className="form-label">Email
-        <input type="email" name="email" required autoComplete="off" defaultValue={values?.email} className="form-control mt-1" />
+        <input type="email" name="email" required autoComplete="off" defaultValue={values?.email ?? ""} className="form-control mt-1" />
       </label>
       <UserRoleSelect value={values?.role ?? "clerk"} />
       <label className="form-label">Password

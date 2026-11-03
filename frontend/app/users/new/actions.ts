@@ -50,6 +50,7 @@ export async function createUser(_prev: CreateUserState, formData: FormData): Pr
     .eq("id", signUp.user.id).select("id").single();
 
   revalidatePath("/users");
+  revalidatePath("/users/new");
   return { created: {
     email, needsConfirmation: !signUp.session, userId: signUp.user.id,
     roleWarning: assigned.error ? "The account was created, but its role could not be assigned. Edit the user to set the role; do not create the account again." : undefined,

@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState, useId, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { archiveVendor, saveVendor, type SavedVendor } from "./actions";
 import ArchiveButton from "@/components/ArchiveButton.client";
 
@@ -15,19 +16,25 @@ export default function VendorForm({ vendor, defaultName, onSaved, onCancel, can
   canViewHistory?: boolean;
 }) {
   const formId = useId();
+  const router = useRouter();
+  const [formVersion, setFormVersion] = useState(0);
   const embedded = !!onSaved;
   const [state, formAction, pending] = useActionState(async (prev: Parameters<typeof saveVendor>[0], formData: FormData) => {
     const result = await saveVendor(prev, formData);
-    if (result?.saved) onSaved?.(result.saved);
+    if (result?.saved) {
+      // Remount uncontrolled fields after success, including any error defaults.
+      if (!vendor) setFormVersion((version) => version + 1);
+      if (onSaved) onSaved(result.saved);
+      else router.push("/vendors");
+    }
     return result;
   }, undefined);
   const values = state?.values ?? { name: vendor?.name ?? defaultName ?? "", account_number: vendor?.account_number ?? "", payment_type: vendor?.payment_type ?? "", autopay: String(vendor?.autopay ?? false) };
 
   return (
     <div className={embedded ? "d-grid gap-3" : "card card-body d-grid gap-3"}>
-    <form id={formId} action={formAction} className="d-grid gap-3">
+    <form key={formVersion} id={formId} action={formAction} className="d-grid gap-3">
       {!embedded && <h2 className="h5 mb-0">Vendor details</h2>}
-      {embedded && <input type="hidden" name="embedded" value="1" />}
       {state?.error && <p role="alert" className="alert alert-danger mb-0">{state.error}</p>}
       {vendor && <input type="hidden" name="id" value={vendor.id} />}
       <label className="form-label">Name
