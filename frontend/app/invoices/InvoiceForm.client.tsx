@@ -102,6 +102,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
   const accountNumber = vendors.find((vendor) => vendor.id === fields.vendorId)?.account_number ?? "";
   const payUrl = paymentLink(fields.paymentUrl);
   const locked = invoice?.fields.status === "approved" || invoice?.fields.status === "paid";
+  const isDirty = !!invoice && (["vendorId", "propertyId", "invoiceNumber", "amountDue", "dueDate", "paymentUrl"] as const).some((key) => fields[key] !== invoice.fields[key]);
 
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
@@ -366,7 +367,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
         <div className={styles.actionGroup}>
           {invoice && <InvoiceMoreActions id={invoice.id} name={invoice.fields.invoiceNumber} status={invoice.fields.status} canViewHistory={canViewHistory} />}
           {invoice && invoice.fields.status === "waiting on approval" &&
-            <CButton color="success" type="button" disabled={saving} onClick={() => startSaving(async () => {
+            <CButton color="success" type="button" disabled={saving || isDirty} title={isDirty ? "Save your changes before approving" : undefined} onClick={() => startSaving(async () => {
               try {
                 const result = await approveInvoice(invoice.id);
                 if (result) setNotification({ color: "danger", message: result.error });
@@ -383,7 +384,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
         </div>
         <div className={styles.actionGroup}>
           <Link href="/invoices" className="btn btn-outline-secondary">Cancel</Link>
-          {!locked && <CButton color="primary" type="submit" form={formId} disabled={saving || extracting || vendors.length === 0 || properties.length === 0}>
+          {!locked && <CButton color="primary" type="submit" form={formId} disabled={saving || extracting || vendors.length === 0 || properties.length === 0 || (invoice && !isDirty)}>
             {saving ? "Saving…" : invoice ? "Save changes" : "Save bill"}
           </CButton>}
         </div>
