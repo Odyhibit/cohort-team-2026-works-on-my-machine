@@ -19,11 +19,11 @@ export default function UserForm({ user }: { user: UserProfile }) {
         <input type="text" name="name" required defaultValue={state?.name ?? user.name} className="form-control mt-1" />
       </label>
       <UserRoleSelect value={state?.role ?? user.role} />
-      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <div className="d-flex gap-3">
-          <button type="submit" disabled={pending} className="btn btn-primary">{pending ? "Saving…" : "Save changes"}</button>
-          <Link href="/users" className="btn btn-outline-secondary">Cancel</Link>
-          <Link href={`/events?type=actor&id=${user.id}`} className="btn btn-outline-secondary" title="Actions performed by this user">History</Link>
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div className="d-flex gap-2">
+          <button type="submit" disabled={pending} className="btn btn-sm btn-primary">{pending ? "Saving…" : "Save changes"}</button>
+          <Link href="/users" className="btn btn-sm btn-outline-secondary">Cancel</Link>
+          <Link href={`/events?type=actor&id=${user.id}`} className="btn btn-sm btn-outline-secondary" title="Actions performed by this user">History</Link>
         </div>
       </div>
     </form>

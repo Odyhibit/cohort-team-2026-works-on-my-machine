@@ -38,9 +38,9 @@ export default function CreateUserForm() {
       <label className="form-label">Confirm password
         <input type="password" name="confirmPassword" required minLength={6} autoComplete="new-password" className="form-control mt-1" />
       </label>
-      <div className="d-flex gap-3">
-        <button type="submit" disabled={pending} className="btn btn-primary">{pending ? "Creating user…" : "Add user"}</button>
-        <Link href="/users" className="btn btn-outline-secondary">Cancel</Link>
+      <div className="d-flex gap-2">
+        <button type="submit" disabled={pending} className="btn btn-sm btn-primary">{pending ? "Creating user…" : "Add user"}</button>
+        <Link href="/users" className="btn btn-sm btn-outline-secondary">Cancel</Link>
       </div>
     </form>
   );

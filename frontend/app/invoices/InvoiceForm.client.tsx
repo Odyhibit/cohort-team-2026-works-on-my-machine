@@ -14,7 +14,7 @@ import VendorForm from "@/app/vendors/VendorForm.client";
 import PropertyForm from "@/app/properties/PropertyForm.client";
 import InvoiceDocumentPreview from "./InvoiceDocumentPreview";
 import PaymentConfirmation from "./PaymentConfirmation.client";
-import InvoiceMoreActions from "./InvoiceMoreActions.client";
+import InvoiceRecordActions from "./InvoiceRecordActions.client";
 import styles from "./invoice-form.module.scss";
 
 type Option = { id: string; name: string };
@@ -382,9 +382,9 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
       </CForm>
       <div className={styles.actions}>
         <div className={styles.actionGroup}>
-          {invoice && <InvoiceMoreActions id={invoice.id} name={invoice.fields.invoiceNumber} status={invoice.fields.status} canViewHistory={canViewHistory} />}
+          {invoice && <InvoiceRecordActions id={invoice.id} name={invoice.fields.invoiceNumber} status={invoice.fields.status} canViewHistory={canViewHistory} />}
           {invoice && invoice.fields.status === "waiting on approval" &&
-            <CButton color="success" type="button" disabled={saving || isDirty} title={isDirty ? "Save your changes before approving" : undefined} onClick={() => startSaving(async () => {
+            <CButton color="success" size="sm" type="button" disabled={saving || isDirty} title={isDirty ? "Save your changes before approving" : undefined} onClick={() => startSaving(async () => {
               try {
                 const result = await approveInvoice(invoice.id);
                 if (result) setNotification({ color: "danger", message: result.error });
@@ -394,14 +394,14 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
               }
             })}>Approve</CButton>}
           {invoice?.fields.status === "approved" && (payUrl ? (
-            <CButton color="primary" variant="outline" type="button" disabled={saving} onClick={handlePay}>Pay</CButton>
+            <CButton color="primary" size="sm" variant="outline" type="button" disabled={saving} onClick={handlePay}>Pay</CButton>
           ) : (
-            <button type="button" disabled className="btn btn-outline-primary" title="Enter a valid payment URL to enable Pay">Pay</button>
+            <button type="button" disabled className="btn btn-sm btn-outline-primary" title="Enter a valid payment URL to enable Pay">Pay</button>
           ))}
         </div>
         <div className={styles.actionGroup}>
-          <Link href="/invoices" className="btn btn-outline-secondary">Cancel</Link>
-          {!locked && <CButton color="primary" type="submit" form={formId} disabled={saving || extracting || vendors.length === 0 || properties.length === 0 || (invoice && !isDirty)}>
+          <Link href="/invoices" className="btn btn-sm btn-outline-secondary">Cancel</Link>
+          {!locked && <CButton color="primary" size="sm" type="submit" form={formId} disabled={saving || extracting || vendors.length === 0 || properties.length === 0 || (invoice && !isDirty)}>
             {saving ? "Saving…" : invoice ? "Save changes" : "Save bill"}
           </CButton>}
         </div>

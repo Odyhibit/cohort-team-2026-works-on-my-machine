@@ -164,7 +164,7 @@
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem;
   margin-top: 2rem;
 }
 
@@ -172,37 +172,11 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .actionGroup:last-child {
   margin-left: auto;
-}
-
-.moreActions {
-  position: relative;
-
-  summary {
-    list-style: none;
-    &::-webkit-details-marker { display: none; }
-  }
-}
-
-.moreActionsMenu {
-  position: absolute;
-  bottom: calc(100% + 0.5rem);
-  left: 0;
-  z-index: 10;
-  display: grid;
-  gap: 0.5rem;
-  width: 16rem;
-  padding: 0.75rem;
-  border: 1px solid var(--cui-border-color);
-  border-radius: 0.65rem;
-  background: var(--cui-body-bg);
-  box-shadow: 0 0.5rem 1rem #0002;
-
-  form, :global(.btn) { width: 100%; }
 }
 
 .reopenDialog {
@@ -214,16 +188,6 @@
   background: var(--cui-body-bg);
 
   &::backdrop { background: #0007; }
-}
-
-.actions :global(.btn) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 3rem;
-  min-width: 8rem;
-  padding-inline: 1.2rem;
-  font-weight: 600;
 }
 
 @media (max-width: 1150px) {
@@ -248,5 +212,30 @@
   .previewSurface {
     min-height: 320px;
     height: 360px;
+  }
+
+  .actionGroup {
+    flex: 1 1 100%;
+  }
+
+  .actionGroup:empty {
+    display: none;
+  }
+
+  .actionGroup > :global(.btn),
+  .actionGroup > form {
+    flex: 1 1 auto;
+  }
+
+  .actionGroup > :global(.btn),
+  .actionGroup > form :global(.btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+  }
+
+  .actionGroup > form :global(.btn) {
+    width: 100%;
   }
 }

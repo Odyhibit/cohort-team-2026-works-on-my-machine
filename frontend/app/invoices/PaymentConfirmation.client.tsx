@@ -18,6 +18,6 @@ export default function PaymentConfirmation({ invoiceId, confirmation, readOnly 
     <input id={id} name="confirmation" required maxLength={200} defaultValue={state?.value ?? confirmation ?? ""} className="form-control" />
     {state?.error && <p role="alert" className="alert alert-danger mb-0">{state.error}</p>}
     <p className="small text-body-secondary mb-0">Saving this number marks the invoice paid and removes it from active invoices.</p>
-    <div><button className="btn btn-primary" disabled={pending}>{pending ? "Saving…" : "Save confirmation and mark paid"}</button></div>
+    <div><button className="btn btn-sm btn-primary" disabled={pending}>{pending ? "Saving…" : "Save confirmation and mark paid"}</button></div>
   </form>;
 }
