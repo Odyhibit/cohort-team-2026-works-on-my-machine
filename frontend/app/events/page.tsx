@@ -34,8 +34,8 @@ const fieldLabels: Record<string, string> = {
   payment_type: "Payment type",
   autopay: "Autopay",
   reference_number: "Reference number",
-  vendor_id: "Vendor ID",
-  property_id: "Property ID",
+  vendor_id: "Vendor",
+  property_id: "Property",
   amount: "Amount",
   date: "Invoice date",
   due_date: "Due date",
@@ -46,19 +46,33 @@ const fieldLabels: Record<string, string> = {
   document_mime_type: "Document type",
   status: "Status",
   deleted_at: "Archived at",
-  deleted_by: "Archived by user ID",
+  deleted_by: "Archived by",
 };
 const dateFormat = new Intl.DateTimeFormat("en-US", {
   year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC", timeZoneName: "short",
 });
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
+const actionBadge: Record<string, string> = {
+  created: "text-bg-secondary",
+  updated: "text-bg-light border",
+  approved: "text-bg-primary",
+  archived: "text-bg-danger",
+  restored: "text-bg-dark",
+};
+
 function filterType(value: string): value is FilterType {
   return Object.hasOwn(filterColumns, value);
 }
 
-function valueText(field: string, value: unknown) {
+function valueText(field: string, value: unknown, names: Record<string, Map<string, string>>) {
   if (value === null || value === undefined || value === "") return "—";
+  if (field === "deleted_by") return names[field].get(String(value)) ?? "Former user";
+  if (field === "vendor_id" || field === "property_id") return names[field].get(String(value)) ?? String(value);
+  if (field === "deleted_at") {
+    const date = new Date(String(value));
+    return Number.isNaN(date.getTime()) ? String(value) : dateFormat.format(date);
+  }
   if (field === "autopay" && typeof value === "boolean") return value ? "On" : "Off";
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (field === "amount" && (typeof value === "number" || typeof value === "string") && Number.isFinite(Number(value))) {
@@ -133,6 +147,11 @@ async function EventViewer({ searchParams }: Props) {
     property: propertyResult.data.map((property) => ({ id: property.id, label: `${property.name}${archived(property)}` })),
     actor: profileResult.data.map((profile) => ({ id: profile.id, label: profile.name })),
   };
+  const changeNames = {
+    vendor_id: new Map(options.vendor.map((option) => [option.id, option.label])),
+    property_id: new Map(options.property.map((option) => [option.id, option.label])),
+    deleted_by: actors,
+  };
   // These options contain targeted ID lookups, not a capped picker list.
   const validSelection = validFilter && (!type || options[type].some((option) => option.id === requestedId));
   const selectedLabel = type ? options[type].find((option) => option.id === requestedId)?.label : undefined;
@@ -151,11 +170,13 @@ async function EventViewer({ searchParams }: Props) {
                     : options.property.find((option) => option.id === event.property_id)?.label;
                 const actorName = event.actor_type === "system" ? "System"
                   : event.actor_user_id ? actors.get(event.actor_user_id) ?? "Former user" : "Former user";
-                const changes = Object.entries(event.changes ?? {}).filter(([field]) => field !== "id");
+                // The audit trigger logs empty fields on insert, so skip changes that would read "— → —".
+                const changes = Object.entries(event.changes ?? {}).filter(([field, change]) => field !== "id"
+                  && (valueText(field, change?.old, changeNames) !== "—" || valueText(field, change?.new, changeNames) !== "—"));
                 return (
                   <li key={event.id} className="list-group-item">
                     <div className="d-flex flex-wrap justify-content-between gap-2">
-                      <div><span className="badge text-bg-secondary me-2 text-capitalize">{event.action}</span><strong>{target ?? "Record"}</strong></div>
+                      <div><span className={`badge ${actionBadge[event.action] ?? "text-bg-secondary"} me-2 text-capitalize`}>{event.action}</span><strong>{target ?? "Record"}</strong></div>
                       <time className="text-body-secondary small" dateTime={event.occurred_at}>{dateFormat.format(new Date(event.occurred_at))}</time>
                     </div>
                     <p className="small text-body-secondary mb-1">By {event.actor_user_id && event.actor_type === "user"
@@ -165,7 +186,7 @@ async function EventViewer({ searchParams }: Props) {
                       <summary>Changed fields</summary>
                       <ul className="mb-0 mt-2 small">
                         {changes.map(([field, change]) => (
-                          <li key={field}><strong>{fieldLabels[field] ?? field.replaceAll("_", " ")}:</strong> {valueText(field, change?.old)} → {valueText(field, change?.new)}</li>
+                          <li key={field}><strong>{fieldLabels[field] ?? field.replaceAll("_", " ")}:</strong> {valueText(field, change?.old, changeNames)} → {valueText(field, change?.new, changeNames)}</li>
                         ))}
                       </ul>
                     </details>}
