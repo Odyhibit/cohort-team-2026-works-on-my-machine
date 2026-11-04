@@ -44,9 +44,11 @@ For automatic intake, assume the extractor's returned values are factually corre
 - Replace the free status selector with a read-only status and specific actions. Tighten database grants/policies so a direct Supabase request cannot set `approved` or `paid` by bypassing the UI. Server Actions also check authentication. The demo uses one shared role, with a separate identity for each signed-in person. Revalidate invoice list, edit page, dashboard, and Activity after status changes.
 - Add a separate, durable payment-attempt record and worker when payment integration is ready. Keep one active payment intent per invoice, record retries as separate attempts, and use an idempotency key, restricted provider credentials, and a verified external result before changing status to `paid`. Never treat an AI response alone as proof of payment. The exact AI API, payment provider, and deployment mechanism remain to be chosen.
 
-### Shared-role workflow
+### Administration roles
 
-All signed-in users have the same application permissions: enter invoices, edit rule settings, and manually approve waiting invoices. Accounts default to `admin` in the existing user workflow, but rules access requires authentication rather than a particular profile role. Audit events still identify the individual actor.
+The user list and forms now expose Clerk, Approver, and Admin. New signups default to Clerk; existing accounts keep their roles. Admins manage user roles, rule settings, and Activity. These administrative routes and the Activity search API enforce the role on the server; RLS also restricts settings and audit-event access. Only admins see the Admin navigation section and resource History links.
+
+Invoice workflow actions still require authentication and valid transitions. Distinct clerk/approver permissions for invoice actions are a separate follow-up to this administrative access increment.
 
 Status changes continue through the database functions. The approval action accepts only active invoices in `waiting on approval`; arbitrary status writes remain blocked. The manual workflow now records a confirmation number and sets `paid` in one operation. Paid invoices leave active lists and become read-only. A future payment worker can use the same confirmation operation after verifying the external result.
 

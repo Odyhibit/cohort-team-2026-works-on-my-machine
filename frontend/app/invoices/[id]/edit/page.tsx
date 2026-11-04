@@ -6,6 +6,7 @@ import { isInvoiceStatus } from "@/lib/invoices/status";
 import { InvoiceFormClient } from "../../InvoiceForm.client";
 import styles from "../../invoice-form.module.scss";
 import { invoiceDocumentBucket } from "@/lib/invoices/document";
+import { getAccess } from "@/lib/users/access";
 
 type Props = { params: Promise<{ id: string }> };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,6 +36,7 @@ async function InvoiceEditor({ params }: Props) {
   const { data, error: authError } = await supabase.auth.getClaims();
   if (authError && authError.name !== "AuthSessionMissingError") throw authError;
   if (!data?.claims) redirect(`/login?next=/invoices/${id}/edit`);
+  const { role } = await getAccess();
 
   const [invoiceResult, vendorResult, propertyResult, evaluationResult] = await Promise.all([
     supabase.from("invoices")
@@ -84,6 +86,7 @@ async function InvoiceEditor({ params }: Props) {
     evaluation={evaluationResult.data}
     document={document}
     paymentConfirmation={invoice.payment_confirmation_number}
+    canViewHistory={role === "admin"}
     invoice={{
       id: invoice.id,
       fields: {

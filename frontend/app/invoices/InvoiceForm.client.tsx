@@ -71,13 +71,14 @@ function paymentLink(value: string) {
   }
 }
 
-export function InvoiceFormClient({ vendors: vendorsProp, properties: propertiesProp, invoice, evaluation, document, paymentConfirmation }: {
+export function InvoiceFormClient({ vendors: vendorsProp, properties: propertiesProp, invoice, evaluation, document, paymentConfirmation, canViewHistory = false }: {
   vendors: VendorOption[];
   properties: Option[];
   invoice?: { id: string; fields: Fields };
   evaluation?: Evaluation | null;
   document?: { url?: string; mime?: string; name?: string; error?: string };
   paymentConfirmation?: string | null;
+  canViewHistory?: boolean;
 }) {
   const router = useRouter();
   const [fields, setFields] = useState<Fields>(invoice?.fields ?? initialFields);
@@ -115,6 +116,20 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
     setDialog(kind);
   }
 
+  function resetNewInvoice() {
+    setFields({ ...initialFields });
+    setSelectedFile(null);
+    setPreviewUrl("");
+    setPreviewType("");
+    setValidated(false);
+    setNotification(null);
+    setUnmatched({});
+    setDialog(null);
+    setAddedVendors([]);
+    setAddedProperties([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   function selectFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     setSelectedFile(file ?? null);
@@ -134,7 +149,11 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
       if (!response.ok) throw new Error(result.error ?? "Could not upload invoice document.");
       attachment = { path: result.path, name: result.name };
     }
-    return createInvoice(details, attachment);
+    const result = await createInvoice(details, attachment);
+    // Next.js can retain this form's state when navigating back to /new.
+    // Reset after success, before either creation path navigates away.
+    if (!("error" in result)) resetNewInvoice();
+    return result;
   }
 
   async function extractDetails(file: File) {
@@ -345,7 +364,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
       </CForm>
       <div className={styles.actions}>
         <div className={styles.actionGroup}>
-          {invoice && <InvoiceMoreActions id={invoice.id} name={invoice.fields.invoiceNumber} status={invoice.fields.status} />}
+          {invoice && <InvoiceMoreActions id={invoice.id} name={invoice.fields.invoiceNumber} status={invoice.fields.status} canViewHistory={canViewHistory} />}
           {invoice && invoice.fields.status === "waiting on approval" &&
             <CButton color="success" type="button" disabled={saving} onClick={() => startSaving(async () => {
               try {

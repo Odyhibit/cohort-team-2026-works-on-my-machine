@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import ClickableTableRow from "@/components/ClickableTableRow.client";
+import { isUserRole, userRoleLabels } from "@/lib/users/roles";
 
 export default function UsersPage() {
   return (
@@ -37,7 +38,7 @@ async function UserTable() {
 
   const { data: users, error } = await supabase
     .from("profiles")
-    .select("id, name")
+    .select("id, name, role")
     .order("name");
   if (error) throw error;
 
@@ -48,12 +49,13 @@ async function UserTable() {
           <thead>
             <tr>
               <th scope="col" className="small text-uppercase text-body-secondary px-3">User</th>
+              <th scope="col" className="small text-uppercase text-body-secondary pe-3">Role</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 && (
               <tr>
-                <td className="p-4 text-body-secondary">No users yet.</td>
+                <td colSpan={2} className="p-4 text-body-secondary">No users yet.</td>
               </tr>
             )}
             {users.map((user) => (
@@ -63,6 +65,7 @@ async function UserTable() {
                     {user.name}
                   </Link>
                 </td>
+                <td className="pe-3">{isUserRole(user.role) ? userRoleLabels[user.role] : user.role}</td>
               </ClickableTableRow>
             ))}
           </tbody>

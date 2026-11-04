@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import type { ReactNode } from "react";
 import {
   CCloseButton,
   CSidebar,
@@ -10,11 +10,9 @@ import {
   CSidebarToggler,
 } from "@coreui/react";
 import Link from "next/link";
-import { AppSidebarNav } from "./AppSidebarNav.client";
 import { useSidebar } from "./SidebarContext.client";
-import nav from "./nav";
 
-export default function AppSidebar() {
+export default function AppSidebar({ navigation }: { navigation: ReactNode }) {
   const { sidebarShow, setSidebarShow, sidebarUnfoldable, setSidebarUnfoldable } = useSidebar();
 
   return (
@@ -33,9 +31,7 @@ export default function AppSidebar() {
         </CSidebarBrand>
         <CCloseButton className="d-lg-none" dark onClick={() => setSidebarShow(false)} />
       </CSidebarHeader>
-      <Suspense fallback={null}>
-        <AppSidebarNav items={nav} />
-      </Suspense>
+      {navigation}
       <CSidebarFooter className="border-top d-none d-lg-flex">
         <CSidebarToggler onClick={() => setSidebarUnfoldable(!sidebarUnfoldable)} />
       </CSidebarFooter>

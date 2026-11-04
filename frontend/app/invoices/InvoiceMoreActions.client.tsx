@@ -7,18 +7,19 @@ import type { InvoiceStatus } from "@/lib/invoices/status";
 import { archiveInvoice, reopenInvoice } from "./actions";
 import styles from "./invoice-form.module.scss";
 
-export default function InvoiceMoreActions({ id, name, status }: { id: string; name: string; status: InvoiceStatus }) {
+export default function InvoiceMoreActions({ id, name, status, canViewHistory = false }: { id: string; name: string; status: InvoiceStatus; canViewHistory?: boolean }) {
   const menu = useRef<HTMLDetailsElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const reasonId = useId();
   const [state, action, pending] = useActionState(reopenInvoice, undefined);
+  if (status === "paid" && !canViewHistory) return null;
 
   return <>
     <details ref={menu} className={styles.moreActions}>
       <summary className="btn btn-outline-secondary">More actions</summary>
       <div className={styles.moreActionsMenu}>
-        <Link href={`/events?type=invoice&id=${id}`} className="btn btn-outline-secondary">History</Link>
+        {canViewHistory && <Link href={`/events?type=invoice&id=${id}`} className="btn btn-outline-secondary">History</Link>}
         {status === "approved" && <button type="button" className="btn btn-outline-secondary" onClick={() => {
           if (menu.current) menu.current.open = false;
           dialog.current?.showModal();

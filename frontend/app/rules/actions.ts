@@ -1,7 +1,7 @@
 "use server";
 
 import { refresh, revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
+import { getAccess } from "@/lib/users/access";
 
 export type RuleValues = {
   max_auto_approval_amount: string;
@@ -11,16 +11,16 @@ export type RuleValues = {
 export type RuleFormState = { error?: string; success?: boolean; values: RuleValues } | undefined;
 
 export async function saveRules(_previous: RuleFormState, formData: FormData): Promise<RuleFormState> {
-  const supabase = await createClient();
-  const { data, error: authError } = await supabase.auth.getClaims();
-  if (authError && authError.name !== "AuthSessionMissingError") throw authError;
-  if (!data?.claims) throw new Error("Unauthorized");
+  const { supabase, userId, role } = await getAccess();
+  if (!userId) throw new Error("Unauthorized");
 
   const values: RuleValues = {
     max_auto_approval_amount: String(formData.get("max_auto_approval_amount") ?? "").trim(),
     max_above_average_percent: String(formData.get("max_above_average_percent") ?? "").trim(),
     min_comparable_bills: String(formData.get("min_comparable_bills") ?? "").trim(),
   };
+
+  if (role !== "admin") return { error: "Only admins can change approval rules.", values };
 
   const decimal = /^\d+(?:\.\d{1,2})?$/;
   const amount = Number(values.max_auto_approval_amount);

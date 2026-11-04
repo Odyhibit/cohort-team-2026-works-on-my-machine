@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import VendorForm from "../../VendorForm.client";
+import { getAccess } from "@/lib/users/access";
 
 type Props = { params: Promise<{ id: string }> };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -41,5 +42,6 @@ async function VendorEditor({ params }: Props) {
   if (error) throw error;
   if (!vendor) notFound();
 
-  return <VendorForm key={JSON.stringify(vendor)} vendor={vendor} />;
+  const { role } = await getAccess();
+  return <VendorForm key={JSON.stringify(vendor)} vendor={vendor} canViewHistory={role === "admin"} />;
 }

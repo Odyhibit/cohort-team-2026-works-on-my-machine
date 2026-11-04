@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/lib/users/access";
 import { loadEventRecords } from "@/lib/events/records";
 import FilterForm, { type FilterOptions, type FilterType } from "./FilterForm.client";
 
@@ -90,10 +89,7 @@ export default function EventsPage({ searchParams }: Props) {
 }
 
 async function EventViewer({ searchParams }: Props) {
-  const supabase = await createClient();
-  const { data, error: authError } = await supabase.auth.getClaims();
-  if (authError && authError.name !== "AuthSessionMissingError") throw authError;
-  if (!data?.claims) redirect("/login?next=/events");
+  const { supabase } = await requireAdmin("/events");
 
   const params = await searchParams;
   const requestedType = typeof params.type === "string" ? params.type : "";

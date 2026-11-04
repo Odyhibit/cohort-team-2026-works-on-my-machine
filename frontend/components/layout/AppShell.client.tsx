@@ -8,10 +8,10 @@ import AppSidebar from "./AppSidebar.client";
 import { SidebarProvider } from "./SidebarContext.client";
 
 // Admin shell: sidebar + sticky header + content + footer. Ported from CoreUI's DefaultLayout.
-export default function AppShell({ children, account }: { children: ReactNode; account: ReactNode }) {
+export default function AppShell({ children, account, navigation }: { children: ReactNode; account: ReactNode; navigation: ReactNode }) {
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar navigation={navigation} />
       <div className="wrapper d-flex flex-column min-vh-100">
         <AppHeader account={account} />
         <div className="body flex-grow-1">
