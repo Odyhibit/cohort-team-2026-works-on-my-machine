@@ -7,6 +7,7 @@ import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
 import type { InvoiceDetails } from "@/lib/invoices/invoice-parser";
 import { invoiceStatusLabels } from "@/lib/invoices/status";
 import { ruleReasonLabel } from "@/lib/invoices/rule-reasons";
+import { isAutoPayable } from "@/lib/invoices/payment-gate";
 import { approveInvoice, createInvoice, updateInvoice, type InvoiceInput } from "./actions";
 import AppDialog from "@/components/AppDialog.client";
 import VendorForm from "@/app/vendors/VendorForm.client";
@@ -91,7 +92,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
   const [extracting, setExtracting] = useState(false);
   const [validated, setValidated] = useState(false);
   const [saving, startSaving] = useTransition();
-  const [dialog, setDialog] = useState<"vendor" | "property" | null>(null);
+  const [dialog, setDialog] = useState<"vendor" | "property" | "pay" | null>(null);
   const [dialogKey, setDialogKey] = useState(0);
   const [unmatched, setUnmatched] = useState<{ vendor?: string; property?: string }>({});
   const [addedVendors, setAddedVendors] = useState<VendorOption[]>([]);
@@ -102,6 +103,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
   const accountNumber = vendors.find((vendor) => vendor.id === fields.vendorId)?.account_number ?? "";
   const payUrl = paymentLink(fields.paymentUrl);
   const locked = invoice?.fields.status === "approved" || invoice?.fields.status === "paid";
+  const isDirty = !!invoice && (["vendorId", "propertyId", "invoiceNumber", "amountDue", "dueDate", "paymentUrl"] as const).some((key) => fields[key] !== invoice.fields[key]);
 
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
@@ -128,6 +130,22 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
     setAddedVendors([]);
     setAddedProperties([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function handlePay() {
+    if (!invoice) return;
+    startSaving(async () => {
+      try {
+        if (await isAutoPayable({ id: invoice.id, vendorId: fields.vendorId })) {
+          // TODO: auto-pay
+          setNotification({ color: "info", message: "Auto-pay is not available yet." });
+          return;
+        }
+        setDialog("pay");
+      } catch (error) {
+        setNotification({ color: "danger", message: error instanceof Error ? error.message : "Could not start payment." });
+      }
+    });
   }
 
   function selectFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -366,7 +384,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
         <div className={styles.actionGroup}>
           {invoice && <InvoiceMoreActions id={invoice.id} name={invoice.fields.invoiceNumber} status={invoice.fields.status} canViewHistory={canViewHistory} />}
           {invoice && invoice.fields.status === "waiting on approval" &&
-            <CButton color="success" type="button" disabled={saving} onClick={() => startSaving(async () => {
+            <CButton color="success" type="button" disabled={saving || isDirty} title={isDirty ? "Save your changes before approving" : undefined} onClick={() => startSaving(async () => {
               try {
                 const result = await approveInvoice(invoice.id);
                 if (result) setNotification({ color: "danger", message: result.error });
@@ -375,15 +393,15 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
                 setNotification({ color: "danger", message: error instanceof Error ? error.message : "Could not approve invoice." });
               }
             })}>Approve</CButton>}
-          {invoice?.fields.status !== "paid" && (payUrl ? (
-            <a href={payUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary">Pay</a>
+          {invoice?.fields.status === "approved" && (payUrl ? (
+            <CButton color="primary" variant="outline" type="button" disabled={saving} onClick={handlePay}>Pay</CButton>
           ) : (
             <button type="button" disabled className="btn btn-outline-primary" title="Enter a valid payment URL to enable Pay">Pay</button>
           ))}
         </div>
         <div className={styles.actionGroup}>
           <Link href="/invoices" className="btn btn-outline-secondary">Cancel</Link>
-          {!locked && <CButton color="primary" type="submit" form={formId} disabled={saving || extracting || vendors.length === 0 || properties.length === 0}>
+          {!locked && <CButton color="primary" type="submit" form={formId} disabled={saving || extracting || vendors.length === 0 || properties.length === 0 || (invoice && !isDirty)}>
             {saving ? "Saving…" : invoice ? "Save changes" : "Save bill"}
           </CButton>}
         </div>
@@ -409,6 +427,18 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
             setDialog(null);
           }} />
       </AppDialog>
+      {invoice && payUrl && <AppDialog visible={dialog === "pay"} onClose={() => setDialog(null)} title="Pay vendor">
+        <ol className="ps-3 d-grid gap-4 mb-0">
+          <li className="d-grid gap-2">
+            <p className="mb-0">Open the vendor&apos;s payment page and complete payment.</p>
+            <div><a href={payUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary">Open vendor payment page</a></div>
+          </li>
+          <li className="d-grid gap-2">
+            <p className="mb-0">Come back here and enter the confirmation number.</p>
+            <PaymentConfirmation invoiceId={invoice.id} confirmation={paymentConfirmation ?? null} variant="dialog" />
+          </li>
+        </ol>
+      </AppDialog>}
     </div>
   );
 }
