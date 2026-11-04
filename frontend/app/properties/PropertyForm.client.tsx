@@ -33,11 +33,11 @@ export default function PropertyForm({ property, defaultName, onSaved, onCancel 
       <label className="form-label">Address <span className="text-body-secondary">(optional)</span>
         <input type="text" name="address" defaultValue={values.address} className="form-control mt-1" />
       </label>
-      <div className="d-flex gap-3">
-        <button type="submit" disabled={pending} className="btn btn-primary">{pending ? "Saving…" : property ? "Save changes" : "Add property"}</button>
+      <div className="d-flex gap-2">
+        <button type="submit" disabled={pending} className="btn btn-sm btn-primary">{pending ? "Saving…" : property ? "Save changes" : "Add property"}</button>
         {onCancel
-          ? <button type="button" onClick={onCancel} className="btn btn-outline-secondary">Cancel</button>
-          : property && <Link href="/properties" className="btn btn-outline-secondary">Cancel</Link>}
+          ? <button type="button" onClick={onCancel} className="btn btn-sm btn-outline-secondary">Cancel</button>
+          : property && <Link href="/properties" className="btn btn-sm btn-outline-secondary">Cancel</Link>}
       </div>
     </form>
   );

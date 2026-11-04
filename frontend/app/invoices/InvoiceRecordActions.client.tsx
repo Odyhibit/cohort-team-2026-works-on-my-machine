@@ -7,8 +7,7 @@ import type { InvoiceStatus } from "@/lib/invoices/status";
 import { archiveInvoice, reopenInvoice } from "./actions";
 import styles from "./invoice-form.module.scss";
 
-export default function InvoiceMoreActions({ id, name, status, canViewHistory = false }: { id: string; name: string; status: InvoiceStatus; canViewHistory?: boolean }) {
-  const menu = useRef<HTMLDetailsElement>(null);
+export default function InvoiceRecordActions({ id, name, status, canViewHistory = false }: { id: string; name: string; status: InvoiceStatus; canViewHistory?: boolean }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const reasonId = useId();
@@ -16,17 +15,9 @@ export default function InvoiceMoreActions({ id, name, status, canViewHistory = 
   if (status === "paid" && !canViewHistory) return null;
 
   return <>
-    <details ref={menu} className={styles.moreActions}>
-      <summary className="btn btn-outline-secondary">More actions</summary>
-      <div className={styles.moreActionsMenu}>
-        {canViewHistory && <Link href={`/events?type=invoice&id=${id}`} className="btn btn-outline-secondary">History</Link>}
-        {status === "approved" && <button type="button" className="btn btn-outline-secondary" onClick={() => {
-          if (menu.current) menu.current.open = false;
-          dialog.current?.showModal();
-        }}>Reopen for correction</button>}
-        {status !== "paid" && <ArchiveButton action={archiveInvoice} id={id} name={name} />}
-      </div>
-    </details>
+    {status !== "paid" && <ArchiveButton action={archiveInvoice} id={id} name={name} size="sm" />}
+    {canViewHistory && <Link href={`/events?type=invoice&id=${id}`} className="btn btn-sm btn-outline-secondary">History</Link>}
+    {status === "approved" && <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => dialog.current?.showModal()}>Reopen for correction</button>}
 
     <dialog ref={dialog} aria-labelledby={titleId} className={styles.reopenDialog}>
       <form action={action} className="d-grid gap-3">
@@ -37,8 +28,8 @@ export default function InvoiceMoreActions({ id, name, status, canViewHistory = 
         <textarea id={reasonId} name="reason" required maxLength={500} rows={3} defaultValue={state?.reason ?? ""} className="form-control" />
         {state?.error && <p role="alert" className="alert alert-danger mb-0">{state.error}</p>}
         <div className="d-flex flex-wrap gap-2">
-          <button type="submit" disabled={pending} className="btn btn-primary">{pending ? "Reopening…" : "Reopen invoice"}</button>
-          <button type="button" disabled={pending} className="btn btn-outline-secondary" onClick={() => dialog.current?.close()}>Cancel</button>
+          <button type="submit" disabled={pending} className="btn btn-sm btn-primary">{pending ? "Reopening…" : "Reopen invoice"}</button>
+          <button type="button" disabled={pending} className="btn btn-sm btn-outline-secondary" onClick={() => dialog.current?.close()}>Cancel</button>
         </div>
       </form>
     </dialog>

@@ -51,15 +51,15 @@ export default function VendorForm({ vendor, defaultName, onSaved, onCancel, can
         <label className="form-check-label" htmlFor={`${formId}-autopay`}>Autopay</label>
       </div>
     </form>
-      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <div className="d-flex gap-3">
-        <button type="submit" form={formId} disabled={pending} className="btn btn-primary">{pending ? "Saving…" : vendor ? "Save changes" : "Add vendor"}</button>
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div className="d-flex gap-2">
+        <button type="submit" form={formId} disabled={pending} className="btn btn-sm btn-primary">{pending ? "Saving…" : vendor ? "Save changes" : "Add vendor"}</button>
         {embedded
-          ? <button type="button" onClick={onCancel} className="btn btn-outline-secondary">Cancel</button>
-          : <Link href="/vendors" className="btn btn-outline-secondary">Cancel</Link>}
-        {vendor && canViewHistory && <Link href={`/events?type=vendor&id=${vendor.id}`} className="btn btn-outline-secondary">History</Link>}
+          ? <button type="button" onClick={onCancel} className="btn btn-sm btn-outline-secondary">Cancel</button>
+          : <Link href="/vendors" className="btn btn-sm btn-outline-secondary">Cancel</Link>}
+        {vendor && canViewHistory && <Link href={`/events?type=vendor&id=${vendor.id}`} className="btn btn-sm btn-outline-secondary">History</Link>}
         </div>
-        {vendor && <ArchiveButton action={archiveVendor} id={vendor.id} name={vendor.name} />}
+        {vendor && <ArchiveButton action={archiveVendor} id={vendor.id} name={vendor.name} size="sm" />}
       </div>
     </div>
   );
