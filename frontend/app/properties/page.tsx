@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import ArchiveButton from "@/components/ArchiveButton.client";
+import { getAccess } from "@/lib/users/access";
 import { archiveProperty } from "./actions";
 import PropertyForm from "./PropertyForm.client";
 
@@ -42,10 +43,11 @@ async function Properties({ searchParams }: Props) {
 
   const { edit } = await searchParams;
   const editing = properties.find((property) => property.id === edit);
+  const { role } = await getAccess();
 
   return (
     <div className="d-grid gap-4">
-      <PropertyForm key={editing ? JSON.stringify(editing) : "new"} property={editing} />
+      <PropertyForm key={editing ? JSON.stringify(editing) : "new"} property={editing} canViewHistory={role === "admin"} />
 
       <section aria-labelledby="property-list-title">
         <h2 id="property-list-title" className="h4 mb-3">Saved properties</h2>

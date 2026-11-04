@@ -7,11 +7,12 @@ import { saveProperty, type SavedProperty } from "./actions";
 export type Property = { id: string; name: string; address: string | null };
 
 
-export default function PropertyForm({ property, defaultName, onSaved, onCancel }: {
+export default function PropertyForm({ property, defaultName, onSaved, onCancel, canViewHistory = false }: {
   property?: Property;
   defaultName?: string;
   onSaved?: (property: SavedProperty) => void;
   onCancel?: () => void;
+  canViewHistory?: boolean;
 }) {
   const embedded = !!onSaved;
   const [state, formAction, pending] = useActionState(async (prev: Parameters<typeof saveProperty>[0], formData: FormData) => {
@@ -38,6 +39,7 @@ export default function PropertyForm({ property, defaultName, onSaved, onCancel 
         {onCancel
           ? <button type="button" onClick={onCancel} className="btn btn-sm btn-outline-secondary">Cancel</button>
           : property && <Link href="/properties" className="btn btn-sm btn-outline-secondary">Cancel</Link>}
+        {property && canViewHistory && <Link href={`/events?type=property&id=${property.id}`} className="btn btn-sm btn-outline-secondary">History</Link>}
       </div>
     </form>
   );
