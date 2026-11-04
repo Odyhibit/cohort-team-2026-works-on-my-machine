@@ -99,6 +99,7 @@ Why this shape works:
 | Import it without the `.tsx` extension | `import PropertySelect from "./PropertySelect.client";` |
 | Server files get no suffix and no directive | `page.tsx`, `layout.tsx`, `PropertyList.tsx` |
 | Server Actions go in a file whose first line is `"use server";` | `actions.ts` (next to the page that uses them) |
+| Next.js error files `error.tsx` and `global-error.tsx` must be client components with exactly those names, so they take `"use client";` but no `.client` suffix. Keep them thin wrappers around a shared component | `app/error.tsx` and `app/global-error.tsx` render `components/ErrorStatus.client.tsx` |
 
 `"use client"` marks a **boundary**: everything the file imports also goes into the client bundle. So keep `.client.tsx` files small, and don't import server-only modules (`@/utils/supabase/server`, `next/headers`, secrets) into them.
 
