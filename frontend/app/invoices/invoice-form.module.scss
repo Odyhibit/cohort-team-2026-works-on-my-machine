@@ -213,4 +213,29 @@
     min-height: 320px;
     height: 360px;
   }
+
+  .actionGroup {
+    flex: 1 1 100%;
+  }
+
+  .actionGroup:empty {
+    display: none;
+  }
+
+  .actionGroup > :global(.btn),
+  .actionGroup > form {
+    flex: 1 1 auto;
+  }
+
+  .actionGroup > :global(.btn),
+  .actionGroup > form :global(.btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+  }
+
+  .actionGroup > form :global(.btn) {
+    width: 100%;
+  }
 }
