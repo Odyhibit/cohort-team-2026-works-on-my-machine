@@ -26,7 +26,7 @@ type InvoiceRow = {
 const statusBadge: Record<string, string> = {
   created: "text-bg-secondary",
   "waiting on approval": "text-bg-warning",
-  approved: "text-bg-info",
+  approved: "text-bg-primary",
   paid: "text-bg-success",
 };
 

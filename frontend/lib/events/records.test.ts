@@ -75,3 +75,41 @@ test("lookup failures propagate instead of becoming misleading missing-name labe
   const db = database({}, "vendors");
   await assert.rejects(loadEventRecords(db.client, [{ ...emptyIds, vendor_id: "vendor" }]), /Lookup failed/);
 });
+
+test("vendor and property IDs inside changes are fetched, including archived records", async () => {
+  const archived = "2026-10-01T00:00:00Z";
+  const db = database({
+    vendors: [{ id: "old-vendor", name: "Old vendor", deleted_at: archived }, { id: "new-vendor", name: "New vendor", deleted_at: null }],
+    properties: [{ id: "old-property", name: "Old property", deleted_at: null }, { id: "new-property", name: "New property", deleted_at: archived }],
+  });
+  const event = { ...emptyIds, changes: { vendor_id: { old: "old-vendor", new: "new-vendor" }, property_id: { old: "old-property", new: "new-property" } } };
+  const result = await loadEventRecords(db.client, [event]);
+  assert.deepEqual(result.vendorResult.data.map((row) => row.id).sort(), ["new-vendor", "old-vendor"]);
+  assert.deepEqual(result.propertyResult.data.map((row) => row.id).sort(), ["new-property", "old-property"]);
+  assert.equal(result.vendorResult.data.find((row) => row.id === "old-vendor")?.deleted_at, archived);
+  assert.equal(result.propertyResult.data.find((row) => row.id === "new-property")?.deleted_at, archived);
+});
+
+test("deleted_by inside changes is fetched from profiles", async () => {
+  const db = database({ profiles: [{ id: "admin", name: "Admin user" }] });
+  const result = await loadEventRecords(db.client, [{ ...emptyIds, changes: { deleted_by: { old: null, new: "admin" } } }]);
+  assert.equal(result.profileResult.data[0].name, "Admin user");
+  assert.deepEqual(db.calls, [{ table: "profiles", ids: ["admin"] }]);
+});
+
+test("null change values are skipped and repeated IDs are deduplicated", async () => {
+  const db = database({ vendors: [{ id: "vendor", name: "Vendor" }] });
+  const events = [
+    { ...emptyIds, vendor_id: "vendor", changes: { vendor_id: { old: null, new: "vendor" } } },
+    { ...emptyIds, changes: { vendor_id: { old: "vendor", new: "vendor" } } },
+  ];
+  await loadEventRecords(db.client, events);
+  assert.deepEqual(db.calls, [{ table: "vendors", ids: ["vendor"] }]);
+});
+
+test("an event whose changes hold only nulls runs no name queries", async () => {
+  const db = database({});
+  const nulls = { old: null, new: null };
+  await loadEventRecords(db.client, [{ ...emptyIds, changes: { vendor_id: nulls, property_id: nulls, deleted_by: nulls } }]);
+  assert.equal(db.calls.length, 0);
+});

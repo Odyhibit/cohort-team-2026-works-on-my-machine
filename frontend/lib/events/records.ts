@@ -5,6 +5,7 @@ type EventIds = {
   vendor_id: string | null;
   property_id: string | null;
   actor_user_id: string | null;
+  changes?: Record<string, { old?: unknown; new?: unknown }>;
 };
 type Selection = { type: "invoice" | "vendor" | "property" | "actor"; id: string };
 
@@ -12,7 +13,11 @@ function ids(values: (string | null)[]) {
   return [...new Set(values.filter((value): value is string => value !== null))];
 }
 
-// Only fetch labels for this event page and the selected History target.
+function changed(events: EventIds[], field: string) {
+  return events.flatMap((event) => [event.changes?.[field]?.old, event.changes?.[field]?.new]).filter((value): value is string => typeof value === "string");
+}
+
+// Only fetch labels for this event page, including IDs inside its changes, and the selected History target.
 // Archived rows intentionally participate in these lookups.
 export async function loadEventRecords(supabase: SupabaseClient, events: EventIds[], selected?: Selection) {
   const invoiceIds = ids([...events.map((event) => event.invoice_id), selected?.type === "invoice" ? selected.id : null]);
@@ -22,9 +27,9 @@ export async function loadEventRecords(supabase: SupabaseClient, events: EventId
   if (invoiceResult.error) throw invoiceResult.error;
   const invoices = invoiceResult.data ?? [];
 
-  const vendorIds = ids([...events.map((event) => event.vendor_id), ...invoices.map((invoice) => invoice.vendor_id), selected?.type === "vendor" ? selected.id : null]);
-  const propertyIds = ids([...events.map((event) => event.property_id), ...invoices.map((invoice) => invoice.property_id), selected?.type === "property" ? selected.id : null]);
-  const actorIds = ids([...events.map((event) => event.actor_user_id), selected?.type === "actor" ? selected.id : null]);
+  const vendorIds = ids([...events.map((event) => event.vendor_id), ...changed(events, "vendor_id"), ...invoices.map((invoice) => invoice.vendor_id), selected?.type === "vendor" ? selected.id : null]);
+  const propertyIds = ids([...events.map((event) => event.property_id), ...changed(events, "property_id"), ...invoices.map((invoice) => invoice.property_id), selected?.type === "property" ? selected.id : null]);
+  const actorIds = ids([...events.map((event) => event.actor_user_id), ...changed(events, "deleted_by"), selected?.type === "actor" ? selected.id : null]);
   const [vendorResult, propertyResult, profileResult] = await Promise.all([
     vendorIds.length ? supabase.from("vendors").select("id, name, deleted_at").in("id", vendorIds) : { data: [], error: null },
     propertyIds.length ? supabase.from("properties").select("id, name, deleted_at").in("id", propertyIds) : { data: [], error: null },
