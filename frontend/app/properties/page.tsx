@@ -59,8 +59,8 @@ async function Properties({ searchParams }: Props) {
                 {property.address && <p className="small text-body-secondary mb-0">{property.address}</p>}
               </div>
               <div className="d-flex align-items-center gap-2">
-                <Link href={{ pathname: "/properties", query: { edit: property.id } }} className="btn btn-outline-secondary">Edit</Link>
-                <ArchiveButton action={archiveProperty} id={property.id} name={property.name} />
+                <Link href={{ pathname: "/properties", query: { edit: property.id } }} className="btn btn-sm btn-outline-secondary">Edit</Link>
+                <ArchiveButton action={archiveProperty} id={property.id} name={property.name} size="sm" />
               </div>
             </li>)}
           </ul>
