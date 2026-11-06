@@ -4,7 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, useTransition } fr
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
-import type { InvoiceDetails } from "@/lib/invoices/invoice-parser";
+import type { ExtractionResult } from "@/lib/invoices/extraction";
 import { invoiceStatusLabels, isInvoiceLocked } from "@/lib/invoices/status";
 import { ruleReasonLabel } from "@/lib/invoices/rule-reasons";
 import { isAutoPayable } from "@/lib/invoices/payment-gate";
@@ -165,7 +165,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
     setPreviewType(file?.type ?? "");
     setPreviewUrl(file ? URL.createObjectURL(file) : "");
     setNotification(null);
-    if (file && (file.type === "application/pdf" || /\.pdf$/i.test(file.name))) void extractDetails(file);
+    if (file) void extractDetails(file);
   }
 
   async function saveNewInvoice(details: Omit<InvoiceInput, "status">, file?: File | null) {
@@ -188,7 +188,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
   async function extractDetails(file: File) {
     if (extractingRef.current) return;
     if (file.size > 4 * 1024 * 1024) {
-      setNotification({ color: "danger", message: "Choose a PDF smaller than 4 MB for extraction." });
+      setNotification({ color: "danger", message: "Choose a document smaller than 4 MB for extraction." });
       return;
     }
     extractingRef.current = true;
@@ -199,7 +199,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
       const formData = new FormData();
       formData.append("file", file);
       const response = await fetch("/api/invoices/extract", { method: "POST", body: formData });
-      const result = await response.json().catch(() => ({})) as { details?: InvoiceDetails; error?: string };
+      const result = await response.json().catch(() => ({})) as Partial<ExtractionResult> & { error?: string };
       if (!activeVisit.current) return;
       if (!response.ok || !result.details) {
         throw new Error(result.error ?? "Could not extract invoice details.");
@@ -221,7 +221,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
         dueDate: details.dueDate ?? "",
         paymentUrl: details.paymentUrl ?? "",
       }));
-      if (vendor && property && details.invoiceNumber && details.amountDue && details.dueDate) {
+      if (result.requiresReview === false && vendor && property && details.invoiceNumber && details.amountDue && details.dueDate) {
         const saved = await saveNewInvoice({
           date: localDate(),
           vendorId: vendor.id,
@@ -237,12 +237,12 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
         return;
       }
       const problems = [
-        !vendor && (details.vendorName ? `No unique vendor match for “${details.vendorName}”.` : "Vendor not found in the PDF."),
-        !property && (details.propertyName ? `No unique property match for “${details.propertyName}”.` : "Property not found in the PDF."),
+        !vendor && (details.vendorName ? `No unique vendor match for “${details.vendorName}”.` : "Vendor not found in the document."),
+        !property && (details.propertyName ? `No unique property match for “${details.propertyName}”.` : "Property not found in the document."),
       ].filter(Boolean);
       setNotification({
         color: "info",
-        message: `Details extracted, but automatic intake needs correction. ${problems.join(" ")} Complete the missing fields and save.`.replace(/\s+/g, " "),
+        message: `${result.warning ?? "Complete or check the extracted details, then save."} ${problems.join(" ")}`.replace(/\s+/g, " ").trim(),
       });
     } catch (error) {
       if (!activeVisit.current) return;
@@ -311,9 +311,9 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
               accept=".pdf,image/png,image/jpeg,image/webp,image/gif" disabled={extracting || saving}
               onChange={selectFile} aria-label="Choose invoice PDF or image" />
           </label>
-          {selectedFile && /\.pdf$/i.test(selectedFile.name) && <CButton color="secondary" type="button" disabled={extracting || saving}
-            onClick={() => void extractDetails(selectedFile)}>{extracting ? "Extracting and saving…" : "Retry PDF extraction"}</CButton>}
-          <p className="small mb-0">PDFs are extracted automatically. Images are saved when you save the invoice.</p>
+          {selectedFile && <CButton color="secondary" type="button" disabled={extracting || saving}
+            onClick={() => void extractDetails(selectedFile)}>{extracting ? "Reading invoice…" : "Retry extraction"}</CButton>}
+          <p className="small mb-0">PDFs and images are read automatically. AI-assisted details stay here for review before you save.</p>
         </> : <button type="button" className="btn btn-outline-secondary" onClick={() => router.refresh()}>Refresh document</button>}
       </InvoiceDocumentPreview>
 
@@ -335,7 +335,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
         </CAlert>
       )}
 
-      <fieldset disabled={locked} className="border-0 p-0 m-0">
+      <fieldset disabled={locked || extracting} className="border-0 p-0 m-0">
       <div className={styles.fieldGrid}>
         <div className={styles.field}>
           <CFormSelect id="vendorId" name="vendor_id" label="Vendor *" required disabled={vendors.length === 0} value={fields.vendorId} onChange={setField("vendorId")} feedbackInvalid="Choose a vendor.">
