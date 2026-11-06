@@ -1,5 +1,6 @@
 import "server-only";
 import { validatedExtraction } from "./extraction";
+import { AiExtractionError, geminiRequestError } from "./ai-extraction-errors";
 
 export function aiExtractionConfigured() {
   return Boolean(process.env.GEMINI_API_KEY?.trim());
@@ -22,7 +23,7 @@ export async function extractInvoiceWithAi(bytes: Uint8Array, mime: string) {
   const key = process.env.GEMINI_API_KEY?.trim();
   if (!key) throw new Error("AI extraction is not configured.");
   const model = process.env.GEMINI_EXTRACTION_MODEL?.trim() || "gemini-3.8-flash";
-  if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error("Invalid extraction model.");
+  if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new AiExtractionError("model");
   const keys = ["vendorName", "propertyName", "invoiceNumber", "amountDue", "dueDate", "paymentUrl"];
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
@@ -43,15 +44,18 @@ export async function extractInvoiceWithAi(bytes: Uint8Array, mime: string) {
         },
       },
     }),
+  }).catch((error: unknown) => {
+    throw new AiExtractionError(error instanceof Error && error.name === "TimeoutError" ? "timeout" : "network");
   });
   // Do not log document contents, keys, or provider error bodies.
-  if (!response.ok) throw new Error(`AI extraction returned HTTP ${response.status}.`);
+  if (!response.ok) throw geminiRequestError(response.status, await response.json().catch(() => null));
   const result = await response.json() as {
     candidates?: { finishReason?: string; content?: { parts?: { text?: string; thought?: boolean }[] } }[];
   };
   const candidate = result.candidates?.[0];
-  if (candidate?.finishReason !== "STOP") throw new Error("AI extraction did not complete.");
+  if (candidate?.finishReason !== "STOP") throw new AiExtractionError("output");
   const output = candidate.content?.parts?.filter((part) => !part.thought).map((part) => part.text ?? "").join("");
-  if (!output) throw new Error("AI extraction returned no details.");
-  return validatedExtraction(JSON.parse(output));
+  if (!output) throw new AiExtractionError("output");
+  try { return validatedExtraction(JSON.parse(output)); }
+  catch { throw new AiExtractionError("output"); }
 }

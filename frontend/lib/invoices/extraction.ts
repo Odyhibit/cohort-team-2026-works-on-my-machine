@@ -1,4 +1,5 @@
 import type { InvoiceDetails } from "./invoice-parser";
+import { AiExtractionError } from "./ai-extraction-errors";
 
 export const emptyInvoiceDetails: InvoiceDetails = {
   vendorName: null, propertyName: null, invoiceNumber: null,
@@ -67,7 +68,9 @@ export async function extractWithFallback(
     // Keep valid parser values. Only fill gaps; never silently replace them.
     for (const key of Object.keys(details) as (keyof InvoiceDetails)[]) details[key] ??= ai[key];
     return { details, requiresReview: true, warning: "AI helped read this document. Check the details against the preview, then save the invoice." };
-  } catch {
-    return { details, requiresReview: true, warning: "AI could not read this document. Any available text details have been kept; complete or check the form manually." };
+  } catch (error) {
+    const reason = error instanceof AiExtractionError ? error.message : "AI could not read this document.";
+    console.warn("AI invoice extraction failed", { code: error instanceof AiExtractionError ? error.code : "unknown" });
+    return { details, requiresReview: true, warning: `${reason} Any available text details have been kept; complete or check the form manually.` };
   }
 }

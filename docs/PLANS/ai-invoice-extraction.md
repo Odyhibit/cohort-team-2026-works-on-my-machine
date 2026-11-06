@@ -18,7 +18,7 @@ Status: Implemented; API configuration and a live scanned-document check pending
 4. AI returns six nullable string fields using a JSON schema. Unknown or ambiguous values should be null. Document contents are data, not instructions; the request has no tools or browser/payment access.
 5. Validate both parser and AI output. Fill missing parser fields from AI, preserving already valid parser values. All AI-assisted results stay on the form for review, including complete results. Existing exact, unique name matching selects vendor/property IDs; unmatched names require a manual selection or resource creation. The create action validates active resource IDs independently.
 6. Saving uses the existing document storage, duplicate check, invoice creation, database rules and approval/payment workflow. Extraction itself writes no invoice and starts no payment.
-7. Missing configuration, provider failure, unreadable data, or malformed output leaves partial parser details available for manual entry. Provider errors and document contents are not exposed in logs or error messages.
+7. Missing configuration, provider failure, unreadable data, or malformed output leaves partial parser details available for manual entry. Fixed messages distinguish rejected API keys, permission errors, unavailable models, quota/rate limits and timeouts. Logs contain only a fixed error category; raw provider errors, keys and document contents are not exposed.
 
 ## Deployment
 
