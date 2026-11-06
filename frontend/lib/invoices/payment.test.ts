@@ -16,13 +16,13 @@ test("matching structured receipt succeeds, including JSON string fallback", () 
   assert.equal(paymentDecision(expected, parsePaymentResult(receipt)).status, "succeeded");
 });
 
-test("every payment identity field must match, and confirmation is required", () => {
+test("matching amount and a nonblank confirmation are required", () => {
   for (const [field, value] of Object.entries({
-    account_number: "other", invoice_number: "BILL-1002", amount: "287.62", currency: "EUR", confirmation_number: " ",
+    amount: "287.62", confirmation_number: " ",
   })) {
     assert.equal(paymentDecision(expected, { ...receipt, [field]: value }).status, "uncertain", field);
   }
-  for (const field of ["account_number", "invoice_number", "amount", "currency", "confirmation_number"] as const) {
+  for (const field of ["amount", "confirmation_number"] as const) {
     assert.equal(paymentDecision(expected, { ...receipt, [field]: null }).status, "uncertain", field);
   }
 });
@@ -34,22 +34,38 @@ test("amount comparison uses exact decimal cents", () => {
   for (const value of ["287.610", "2e2", "$287.61", "287,61", "-1", "NaN", 287.61, null]) assert.equal(cents(value), null);
 });
 
-test("review messages identify the mismatched field and the expected/returned values", () => {
+test("review messages identify amount mismatches and missing confirmations", () => {
   const mismatch = paymentDecision(expected, { ...receipt, account_number: "different", amount: "186.42", invoice_number: null });
   assert.equal(mismatch.status, "uncertain");
-  assert.match(mismatch.message, /account number: expected "2000456709", returned "different"/);
-  assert.match(mismatch.message, /invoice number: expected "BILL-1001", returned missing/);
   assert.match(mismatch.message, /amount: expected "287.61", returned "186.42"/);
-  assert.doesNotMatch(mismatch.message, /currency:/);
+  assert.doesNotMatch(mismatch.message, /account number:|invoice number:|currency:/);
   assert.match(paymentDecision(expected, { ...receipt, confirmation_number: null }).message, /confirmation number is missing/);
-  assert.match(paymentDecision(expected, { ...receipt, currency: "EUR" }).message, /currency: expected "USD", returned "EUR"/);
 });
 
-test("a completed payment without a verified account is held for review with a specific explanation", () => {
-  const result = paymentDecision(expected, { ...receipt, account_number: null });
-  assert.equal(result.status, "uncertain");
-  assert.match(result.message, /account number: expected "2000456709", returned missing/);
-  assert.doesNotMatch(result.message, /amount:|invoice number:|currency:/);
+test("demo receipt identifiers and currency are informational, including when omitted", () => {
+  const { account_number, invoice_number, currency, ...minimal } = receipt;
+  assert.ok(account_number && invoice_number && currency);
+  const parsed = parsePaymentResult(minimal);
+  assert.ok(parsed);
+  assert.equal(parsed.account_number, null);
+  assert.equal(parsed.invoice_number, null);
+  assert.equal(parsed.currency, null);
+  assert.equal(paymentDecision(expected, parsed).status, "succeeded");
+  for (const currency of [null, "", "$", "USD", "EUR"]) {
+    assert.equal(paymentDecision(expected, { ...receipt, account_number: null, invoice_number: null, currency }).status, "succeeded");
+  }
+});
+
+test("dollar amounts normalize to exact decimal amounts and imply USD", () => {
+  const parsed = parsePaymentResult({ ...receipt, amount: "$287.61", currency: null });
+  assert.equal(parsed?.amount, "287.61");
+  assert.equal(parsed?.currency, "USD");
+  assert.equal(paymentDecision(expected, parsed).status, "succeeded");
+  assert.equal(parsePaymentResult({ ...receipt, amount: "$1,287.61", currency: null })?.amount, "1287.61");
+  assert.equal(paymentDecision(expected, parsePaymentResult({ ...receipt, amount: "$287.62" })).status, "uncertain");
+  for (const amount of ["$2e2", "$28,7.61", "$-287.61"]) {
+    assert.equal(paymentDecision(expected, parsePaymentResult({ ...receipt, amount })).status, "uncertain");
+  }
 });
 
 test("malformed and incomplete agent responses cannot mark an invoice paid", () => {
@@ -86,4 +102,6 @@ test("prompt carries the invoice data and instructs a single submission and hist
   assert.match(prompt, /Never use expected values copied as evidence/);
   assert.match(prompt, /Receipts may omit these identifiers/);
   assert.match(prompt, /do not discard a number you already verified earlier on the site/);
+  assert.match(prompt, /treat a dollar sign as USD/i);
+  assert.match(prompt, /Missing currency or identifiers alone must not/);
 });

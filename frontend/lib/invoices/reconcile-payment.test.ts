@@ -40,6 +40,22 @@ test("interactive checks use the same validation with the authenticated settleme
   assert.equal(db.calls[0].name, "finish_invoice_payment");
 });
 
+test("previously uncertain receipts can settle without currency or identifiers on recheck", async () => {
+  for (const background of [false, true]) {
+    const db = database();
+    const { currency, account_number, invoice_number, ...minimal } = receipt;
+    assert.ok(currency && account_number && invoice_number);
+    const result = await reconcilePaymentAttempt(db.client, { ...attempt, status: "uncertain" }, async () => ({
+      status: "completed", output: { ...minimal, amount: "$287.61" },
+    }), background);
+    assert.equal(result.attempt.status, "succeeded");
+    assert.equal(db.calls.length, 1);
+    assert.equal(db.calls[0].args.p_status, "succeeded");
+    assert.equal((db.calls[0].args.p_result as PaymentResult).amount, "287.61");
+    assert.equal((db.calls[0].args.p_result as PaymentResult).currency, "USD");
+  }
+});
+
 test("queued/running tasks are left alone; settled attempts do not call the provider again", async () => {
   const db = database();
   for (const status of ["queued", "dispatching", "running"]) {
