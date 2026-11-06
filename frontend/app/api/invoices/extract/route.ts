@@ -4,7 +4,9 @@ import { documentFormat, maxDocumentBytes } from "@/lib/invoices/document";
 import { extractWithFallback } from "@/lib/invoices/extraction";
 import { aiExtractionConfigured, extractInvoiceWithAi } from "@/lib/invoices/ai-extraction";
 
-export const maxDuration = 60;
+// Leave time for auth, PDF parsing and the 120-second provider timeout.
+// Vercel deployments need Fluid compute for this duration on the Hobby plan.
+export const maxDuration = 180;
 
 export async function POST(request: Request) {
   const supabase = await createClient();

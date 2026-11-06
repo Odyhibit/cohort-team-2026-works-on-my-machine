@@ -26,10 +26,10 @@ No migration or additional npm package is needed. Add the following server-only 
 
 ```dotenv
 GEMINI_API_KEY=your-google-ai-studio-api-key
-GEMINI_EXTRACTION_MODEL=gemini-3.8-flash
+GEMINI_EXTRACTION_MODEL=gemini-3.5-flash-lite
 ```
 
-The model setting is optional; the code defaults to `gemini-3.8-flash`. The existing Browser Use key remains separate. Only incomplete PDFs and images make an AI request. The original document is sent inline to Google's API; there is no separate provider file upload to clean up. Requests time out after 45 seconds and the extraction route has a 60-second execution budget. Files retain the existing 4 MB limit.
+The model setting is optional; the code defaults to `gemini-3.5-flash-lite`. This model is optimized for document parsing and simple extraction; see [Google's model documentation](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite). The existing Browser Use key remains separate. Only incomplete PDFs and images make an AI request. The original document is sent inline to Google's API; there is no separate provider file upload to clean up. Gemini 3 models use LOW thinking for this bounded extraction task; other model families retain their supported defaults. Requests time out after 120 seconds and the extraction route has a 180-second execution budget. Enable Fluid compute in Vercel to support this duration on Hobby. Files retain the existing 4 MB limit.
 
 Implementation references: [Gemini structured output](https://ai.google.dev/gemini-api/docs/generate-content/structured-output) and [document processing](https://ai.google.dev/gemini-api/docs/generate-content/document-processing).
 
@@ -40,6 +40,7 @@ Implementation references: [Gemini structured output](https://ai.google.dev/gemi
 - [x] PNG/JPEG/WebP/GIF images bypass PDF text parsing.
 - [x] Invalid dates, amounts, field types and payment URLs are discarded.
 - [x] Missing keys and failed requests preserve partial data for manual correction.
+- [x] Live Gemini Flash-Lite request read all six fields from the fictional Alder Creek PDF correctly in about one second. The previous Gemini 3.8 request returned a temporary-unavailable error after 85 seconds.
 - [ ] With a configured API key, upload an image-only PDF and a scanned image, inspect suggested details, then save and verify the existing rules result.
 
 ## Decisions and scope

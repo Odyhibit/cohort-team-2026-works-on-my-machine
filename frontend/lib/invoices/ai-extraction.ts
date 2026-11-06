@@ -22,14 +22,14 @@ Do not infer names, amounts, dates, or URLs from the filename or outside knowled
 export async function extractInvoiceWithAi(bytes: Uint8Array, mime: string) {
   const key = process.env.GEMINI_API_KEY?.trim();
   if (!key) throw new Error("AI extraction is not configured.");
-  const model = process.env.GEMINI_EXTRACTION_MODEL?.trim() || "gemini-3.8-flash";
+  const model = process.env.GEMINI_EXTRACTION_MODEL?.trim() || "gemini-3.5-flash-lite";
   if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new AiExtractionError("model");
   const keys = ["vendorName", "propertyName", "invoiceNumber", "amountDue", "dueDate", "paymentUrl"];
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
     cache: "no-store",
-    signal: AbortSignal.timeout(45_000),
+    signal: AbortSignal.timeout(120_000),
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: prompt }] },
       contents: [{ role: "user", parts: [
@@ -37,6 +37,9 @@ export async function extractInvoiceWithAi(bytes: Uint8Array, mime: string) {
         { inlineData: { mimeType: mime, data: Buffer.from(bytes).toString("base64") } },
       ] }],
       generationConfig: {
+        // Gemini 3 models support level-based thinking. Keep extraction quick;
+        // leave other model families' settings at their supported defaults.
+        ...(/^gemini-3[.-]/.test(model) ? { thinkingConfig: { thinkingLevel: "LOW" } } : {}),
         responseMimeType: "application/json",
         responseJsonSchema: {
           type: "object", properties: Object.fromEntries(keys.map((key) => [key, { type: ["string", "null"] }])),
