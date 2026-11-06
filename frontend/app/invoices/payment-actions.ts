@@ -8,14 +8,11 @@ import { reconcilePaymentAttempt } from "@/lib/invoices/reconcile-payment";
 import { paymentWorkerConfigured } from "@/lib/invoices/payment-worker-client";
 import { start } from "workflow/api";
 import { completeInvoicePayment } from "@/workflows/invoice-payment";
+import { paymentView as view, type PaymentView } from "@/lib/invoices/payment-view";
 
-export type PaymentView = Pick<PaymentAttempt, "id" | "run_id" | "status" | "message" | "created_at">;
+export type { PaymentView } from "@/lib/invoices/payment-view";
 export type PaymentState = { attempt?: PaymentView; error?: string };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function view(attempt: PaymentAttempt): PaymentView {
-  return { id: attempt.id, run_id: attempt.run_id, status: attempt.status, message: attempt.message, created_at: attempt.created_at };
-}
 
 function invalidate(invoiceId: string) {
   revalidatePath(`/invoices/${invoiceId}/edit`);

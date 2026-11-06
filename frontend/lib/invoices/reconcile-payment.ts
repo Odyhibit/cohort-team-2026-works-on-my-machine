@@ -25,5 +25,5 @@ export async function reconcilePaymentAttempt(
     p_attempt_id: attempt.id, p_status: status, p_result: result, p_message: message,
   });
   if (saved.error) throw new Error(`Could not record payment outcome: ${saved.error.message}`);
-  return { attempt: { ...attempt, status, message }, changed: true };
+  return { attempt: { ...attempt, status, message, result }, changed: true };
 }

@@ -10,6 +10,7 @@ import { getAccess } from "@/lib/users/access";
 import { browserUseConfigured } from "@/lib/invoices/browser-use";
 import { paymentWorkerConfigured } from "@/lib/invoices/payment-worker-client";
 import type { PaymentView } from "../../payment-actions";
+import { paymentView } from "@/lib/invoices/payment-view";
 import { invoiceEditUrl, invoiceListUrl, invoiceView } from "@/lib/invoices/list-view";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ view?: string | string[] }> };
@@ -64,10 +65,10 @@ async function InvoiceEditor({ params, searchParams }: Props) {
   let paymentAttempt: PaymentView | null = null;
   if (invoice.status === "payment processing" || (invoice.status === "approved" && paymentsEnabled)) {
     const payment = await supabase.from("invoice_payment_attempts")
-      .select("id, run_id, status, message, created_at")
+      .select("id, run_id, status, message, created_at, result")
       .eq("invoice_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (payment.error) throw payment.error;
-    paymentAttempt = payment.data as PaymentView | null;
+    paymentAttempt = payment.data ? paymentView(payment.data) : null;
   }
 
   let document: { url?: string; mime?: string; name?: string; error?: string } | undefined;

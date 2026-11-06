@@ -15,6 +15,7 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
   const router = useRouter();
   const prefix = useId();
   const [state, setState] = useState<PaymentState>({ attempt: initialAttempt ?? undefined });
+  const [confirmationDraft, setConfirmationDraft] = useState<{ attemptId: string; value: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const attempt = state.attempt;
   const polling = attempt?.status === "starting" || attempt?.status === "running";
@@ -70,7 +71,10 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
       <form className="d-grid gap-3 mt-3" action={(form) => startTransition(async () => { accept(await requestPayment(() => resolveDemoPayment(invoiceId, form))); })}>
         <p className="mb-0">In Browser Use, confirm the task has finished or stop it. Then check the vendor receipt and history. Enter its confirmation if paid; leave it blank only if you verified no payment occurred.</p>
         <label htmlFor={`${prefix}-confirmation`}>Verified confirmation number (if paid)</label>
-        <input id={`${prefix}-confirmation`} name="confirmation" maxLength={200} className="form-control" />
+        <input id={`${prefix}-confirmation`} name="confirmation" maxLength={200} className="form-control"
+          value={confirmationDraft?.attemptId === attempt.id ? confirmationDraft.value : attempt.suggested_confirmation ?? ""}
+          onChange={(event) => setConfirmationDraft({ attemptId: attempt.id, value: event.target.value })} />
+        {attempt.suggested_confirmation && <p className="small text-body-secondary mb-0">Prefilled from the AI result. Verify it against the vendor receipt before saving.</p>}
         <label htmlFor={`${prefix}-reason`}>Review note</label>
         <textarea id={`${prefix}-reason`} name="reason" required maxLength={500} className="form-control" />
         <label><input type="checkbox" name="reviewed" required /> I confirmed the task has stopped and checked payment history.</label>

@@ -22,6 +22,7 @@ export type PaymentAttempt = {
   run_id: string | null;
   status: "starting" | "running" | PaymentOutcome;
   expected: PaymentSnapshot;
+  result?: unknown;
   message: string;
   created_at: string;
 };

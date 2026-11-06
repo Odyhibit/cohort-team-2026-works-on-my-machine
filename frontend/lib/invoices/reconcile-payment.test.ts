@@ -3,6 +3,7 @@ import test from "node:test";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { reconcilePaymentAttempt } from "./reconcile-payment";
 import type { PaymentAttempt, PaymentResult } from "./payment";
+import { paymentView } from "./payment-view";
 
 const attempt: PaymentAttempt = {
   id: "attempt", invoice_id: "invoice", run_id: "run", status: "running", message: "In progress",
@@ -38,6 +39,15 @@ test("interactive checks use the same validation with the authenticated settleme
   const db = database();
   await reconcilePaymentAttempt(db.client, attempt, async () => ({ status: "completed", output: receipt }));
   assert.equal(db.calls[0].name, "finish_invoice_payment");
+});
+
+test("an immediate status check exposes the confirmation for an uncertain receipt", async () => {
+  const db = database();
+  const output = { ...receipt, amount: "287.62" };
+  const result = await reconcilePaymentAttempt(db.client, attempt, async () => ({ status: "completed", output }));
+  assert.equal(result.attempt.status, "uncertain");
+  assert.deepEqual(result.attempt.result, output);
+  assert.equal(paymentView(result.attempt).suggested_confirmation, "PAY-123");
 });
 
 test("previously uncertain receipts can settle without currency or identifiers on recheck", async () => {
