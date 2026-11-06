@@ -17,7 +17,7 @@ test("complete text invoices skip the AI API, including when optional URL is mis
   assert.deepEqual(result, { details, requiresReview: false });
 });
 
-test("incomplete PDFs fill gaps from AI without replacing parsed values or auto-saving", async () => {
+test("AI fills PDF gaps without replacing parsed values and complete results allow automatic intake", async () => {
   let calls = 0;
   const result = await extractWithFallback(bytes, "application/pdf", {
     parsePdf: async () => ({ ...full, propertyName: null, dueDate: null }),
@@ -29,26 +29,26 @@ test("incomplete PDFs fill gaps from AI without replacing parsed values or auto-
   });
   assert.equal(calls, 1);
   assert.deepEqual(result.details, full);
-  assert.equal(result.requiresReview, true);
-  assert.match(result.warning!, /Check the details/);
+  assert.equal(result.requiresReview, false);
+  assert.equal(result.warning, undefined);
 });
 
 test("PDF text failures and image-only PDFs still reach the document reader", async () => {
   for (const parsePdf of [async () => { throw new Error("no usable text layer"); }, async () => emptyInvoiceDetails]) {
     const result = await extractWithFallback(bytes, "application/pdf", { parsePdf, readDocument: async () => full });
     assert.deepEqual(result.details, full);
-    assert.equal(result.requiresReview, true);
+    assert.equal(result.requiresReview, false);
   }
 });
 
-test("all supported images bypass the PDF parser and always require review", async () => {
+test("complete AI results for supported images bypass the PDF parser and allow automatic intake", async () => {
   for (const mime of ["image/png", "image/jpeg", "image/webp", "image/gif"]) {
     const result = await extractWithFallback(bytes, mime, {
       parsePdf: async () => { assert.fail("an image cannot be parsed as PDF text"); },
       readDocument: async (_bytes, detectedMime) => { assert.equal(detectedMime, mime); return full; },
     });
     assert.deepEqual(result.details, full);
-    assert.equal(result.requiresReview, true);
+    assert.equal(result.requiresReview, false);
   }
 });
 
@@ -71,13 +71,31 @@ test("unreadable documents stay empty rather than inventing values", async () =>
   assert.equal(result.requiresReview, true);
 });
 
+test("missing or invalid required AI fields prevent automatic intake", async () => {
+  for (const missing of ["vendorName", "propertyName", "invoiceNumber", "amountDue", "dueDate"] as const) {
+    const result = await extractWithFallback(bytes, "image/png", {
+      parsePdf: async () => full,
+      readDocument: async () => ({ ...full, [missing]: null }),
+    });
+    assert.equal(result.requiresReview, true, missing);
+    assert.match(result.warning!, /Complete the missing fields/);
+  }
+  const invalid = await extractWithFallback(bytes, "image/png", {
+    parsePdf: async () => full,
+    readDocument: async () => ({ ...full, amountDue: "-1", dueDate: "2026-02-30" }),
+  });
+  assert.equal(invalid.requiresReview, true);
+  assert.equal(invalid.details.amountDue, null);
+  assert.equal(invalid.details.dueDate, null);
+});
+
 test("malformed values are discarded before the fallback completeness check", async () => {
   const result = await extractWithFallback(bytes, "application/pdf", {
     parsePdf: async () => ({ ...full, amountDue: "-50", dueDate: "2026-02-30" }),
     readDocument: async () => full,
   });
   assert.deepEqual(result.details, full);
-  assert.equal(result.requiresReview, true);
+  assert.equal(result.requiresReview, false);
 });
 
 test("document validation rejects invalid dates, amounts, types and unsafe URLs", () => {

@@ -313,7 +313,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
           </label>
           {selectedFile && <CButton color="secondary" type="button" disabled={extracting || saving}
             onClick={() => void extractDetails(selectedFile)}>{extracting ? "Reading invoice…" : "Retry extraction"}</CButton>}
-          <p className="small mb-0">PDFs and images are read automatically. AI-assisted details stay here for review before you save.</p>
+          <p className="small mb-0">Complete invoices are saved automatically. Approval rules and vendor autopay settings determine whether payment starts.</p>
         </> : <button type="button" className="btn btn-outline-secondary" onClick={() => router.refresh()}>Refresh document</button>}
       </InvoiceDocumentPreview>
 

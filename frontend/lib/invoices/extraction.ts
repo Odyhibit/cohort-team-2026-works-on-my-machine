@@ -67,7 +67,8 @@ export async function extractWithFallback(
     const ai = validatedExtraction(await dependencies.readDocument(bytes, mime));
     // Keep valid parser values. Only fill gaps; never silently replace them.
     for (const key of Object.keys(details) as (keyof InvoiceDetails)[]) details[key] ??= ai[key];
-    return { details, requiresReview: true, warning: "AI helped read this document. Check the details against the preview, then save the invoice." };
+    if (extractionComplete(details)) return { details, requiresReview: false };
+    return { details, requiresReview: true, warning: "Some invoice details could not be read. Complete the missing fields, then save the invoice." };
   } catch (error) {
     const reason = error instanceof AiExtractionError ? error.message : "AI could not read this document.";
     console.warn("AI invoice extraction failed", { code: error instanceof AiExtractionError ? error.code : "unknown" });
