@@ -61,6 +61,22 @@ body {
   min-height: 100%;
 }
 
+.payment-banner-spin {
+  animation: payment-banner-spin 1.2s linear infinite;
+}
+
+@keyframes payment-banner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .payment-banner-spin {
+    animation: none;
+  }
+}
+
 @include color-mode(dark) {
   body {
     background-color: var(--cui-dark-bg-subtle);
