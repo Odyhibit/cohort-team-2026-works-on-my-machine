@@ -43,6 +43,7 @@ export const routeNames: Record<string, string> = {
   "/events": "Activity",
   "/rules": "Rules",
   "/properties": "Properties",
+  "/properties/new": "Add Property",
   "/vendors": "Vendors",
   "/vendors/new": "Add Vendor",
   "/users": "Users",
