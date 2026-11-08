@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "verification": {
+    "commands": [
+      { "id": "test", "command": "npm", "args": ["--prefix", "frontend", "test"], "timeoutMs": 120000 },
+      { "id": "lint", "command": "npm", "args": ["--prefix", "frontend", "run", "lint"], "timeoutMs": 180000 },
+      { "id": "typecheck", "command": "frontend/node_modules/.bin/tsc", "args": ["-p", "frontend", "--noEmit"], "timeoutMs": 180000 }
+    ]
+  },
+  "limits": {
+    "maxAttempts": 3,
+    "maxNoProgress": 2
+  }
+}

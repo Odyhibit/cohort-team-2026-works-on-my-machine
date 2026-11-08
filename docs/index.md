@@ -6,7 +6,7 @@ Start here. This index points humans and AI agents to the right doc.
 |---|---|
 | [PRD.md](./PRD.md) | Product requirements: what we're building and why |
 | [api-contract.md](./api-contract.md) | API endpoints and request/response shapes |
-| [code-patterns/](./code-patterns/index.md) | **How we write code**: the Next.js server/client pattern, Supabase data fetching |
+| [code-patterns/](./code-patterns/index.md) | **How we write code**: the Next.js server/client pattern, Supabase data fetching, and the route file map |
 | [PLANS/](./PLANS/index.md) | Implementation plans for upcoming work, with phases and open decisions |
 
 ## For AI agents
