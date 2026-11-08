@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { CContainer } from "@coreui/react";
+import PaymentBanner from "../PaymentBanner.client";
 import AppFooter from "./AppFooter";
 import AppHeader from "./AppHeader.client";
 import AppSidebar from "./AppSidebar.client";
@@ -16,6 +17,8 @@ export default function AppShell({ children, account, navigation }: { children: 
         <AppHeader account={account} />
         <div className="body flex-grow-1">
           <CContainer className="px-4" lg>
+            {/* usePathname() reads runtime URL data; Suspense keeps the route prerenderable. */}
+            <Suspense fallback={null}><PaymentBanner /></Suspense>
             {children}
           </CContainer>
         </div>
