@@ -29,9 +29,12 @@ export async function saveProperty(_prev: FormState, formData: FormData): Promis
 
   revalidatePath("/events");
   revalidatePath("/properties");
+  revalidatePath("/properties/new");
+  if (id) revalidatePath(`/properties/${id}/edit`);
+  revalidatePath("/invoices", "layout");
+  revalidatePath("/");
   refresh();
-  if (formData.get("embedded") === "1") return { saved: row };
-  if (id) redirect("/properties");
+  return { saved: row };
 }
 
 export async function archiveProperty(_prev: FormState, formData: FormData): Promise<{ error: string } | undefined> {
@@ -52,6 +55,9 @@ export async function archiveProperty(_prev: FormState, formData: FormData): Pro
   if (error) return { error: error.message };
 
   revalidatePath("/properties");
+  revalidatePath(`/properties/${id}/edit`);
+  revalidatePath("/invoices", "layout");
+  revalidatePath("/");
   revalidatePath("/events");
   refresh();
   redirect("/properties");
