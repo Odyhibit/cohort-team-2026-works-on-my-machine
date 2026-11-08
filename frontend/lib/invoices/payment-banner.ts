@@ -2,7 +2,7 @@ import type { PaymentView } from "./payment-view";
 
 export const PAYMENT_BANNER_REFRESH = "payment-banner:refresh";
 
-export type PaymentBannerItem = PaymentView & { invoice_id: string; reference_number: string | null; updated_at: string };
+export type PaymentBannerItem = PaymentView & { invoice_id: string; reference_number: string | null; vendor_name: string | null; amount: number | null; updated_at: string };
 type Status = PaymentView["status"];
 type Keyed = Pick<PaymentBannerItem, "id" | "status">;
 
@@ -31,6 +31,15 @@ export function bannerLabel(status: Status): string {
   if (status === "succeeded") return "Paid";
   if (status === "failed") return "Failed";
   return "Needs review";
+}
+
+const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+
+export function bannerInvoiceLabel(item: Pick<PaymentBannerItem, "vendor_name" | "reference_number"> & { amount: number | string | null }): string {
+  const amount = item.amount === null || item.amount === "" ? NaN : Number(item.amount);
+  const parts = [item.vendor_name, item.reference_number, Number.isNaN(amount) ? null : currency.format(amount)]
+    .filter((p): p is string => !!p && p.trim() !== "");
+  return parts.length > 0 ? parts.join(" · ") : "View invoice";
 }
 
 export function requestBannerRefresh(options?: { scroll?: boolean }) {

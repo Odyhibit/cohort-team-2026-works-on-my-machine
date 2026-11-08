@@ -47,17 +47,23 @@ export async function getPaymentBanners(): Promise<PaymentBannerItem[]> {
     if (!auth?.claims) return [];
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data, error } = await supabase.from("invoice_payment_attempts")
-      .select("id, invoice_id, run_id, status, message, result, created_at, updated_at, invoices(reference_number)")
+      .select("id, invoice_id, run_id, status, message, result, created_at, updated_at, invoices(reference_number, amount, vendors(name))")
       .or(`status.in.(starting,running,uncertain),and(status.in.(succeeded,failed),updated_at.gte.${since})`)
       .order("updated_at", { ascending: false }).limit(50);
     if (error || !data) return [];
     return data.map((row) => {
       const embed = (row as { invoices?: unknown }).invoices;
-      const invoice = (Array.isArray(embed) ? embed[0] : embed) as { reference_number?: string | null } | null | undefined;
+      type Embed = { reference_number?: string | null; amount?: number | string | null; vendors?: unknown };
+      const invoice = (Array.isArray(embed) ? embed[0] : embed) as Embed | null | undefined;
+      const vendorEmbed = invoice?.vendors;
+      const vendor = (Array.isArray(vendorEmbed) ? vendorEmbed[0] : vendorEmbed) as { name?: string | null } | null | undefined;
+      const amount = invoice?.amount == null || invoice.amount === "" ? NaN : Number(invoice.amount);
       return {
         ...view(row as unknown as PaymentAttempt),
         invoice_id: row.invoice_id as string,
         reference_number: invoice?.reference_number ?? null,
+        vendor_name: vendor?.name ?? null,
+        amount: Number.isFinite(amount) ? amount : null,
         updated_at: row.updated_at as string,
       };
     });

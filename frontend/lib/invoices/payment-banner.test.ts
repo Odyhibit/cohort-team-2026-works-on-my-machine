@@ -1,10 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bannerColor, bannerLabel, bannerDismissible, bannerIcon, dismissKey, isActive, latestPerInvoice, visibleBanners, type PaymentBannerItem } from "./payment-banner";
+import { bannerInvoiceLabel, bannerColor, bannerLabel, bannerDismissible, bannerIcon, dismissKey, isActive, latestPerInvoice, visibleBanners, type PaymentBannerItem } from "./payment-banner";
 
 const item = (id: string, status: PaymentBannerItem["status"], updated_at: string, invoice_id = id): PaymentBannerItem => ({
   id, status, updated_at, created_at: updated_at, run_id: null, message: "m",
-  suggested_confirmation: null, invoice_id, reference_number: "R-1",
+  suggested_confirmation: null, invoice_id, reference_number: "R-1", vendor_name: "Acme", amount: 10,
+});
+
+test("invoice label joins vendor, reference and amount", () => {
+  assert.equal(bannerInvoiceLabel({ vendor_name: "Summit Trail Equipment Rental", reference_number: "BILL-1001", amount: 287.61 }),
+    "Summit Trail Equipment Rental · BILL-1001 · $287.61");
+  assert.equal(bannerInvoiceLabel({ vendor_name: "V", reference_number: "R", amount: "287.6" }), "V · R · $287.60");
+  assert.equal(bannerInvoiceLabel({ vendor_name: null, reference_number: "BILL-1001", amount: 5 }), "BILL-1001 · $5.00");
+  assert.equal(bannerInvoiceLabel({ vendor_name: "V", reference_number: null, amount: "abc" }), "V");
+  assert.equal(bannerInvoiceLabel({ vendor_name: null, reference_number: null, amount: null }), "View invoice");
 });
 
 test("each status maps to a color, icon and dismissibility", () => {

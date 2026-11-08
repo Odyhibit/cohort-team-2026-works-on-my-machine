@@ -66,7 +66,7 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
     <p className="small text-body-secondary mb-0">Uses the demo credentials and payment details on the vendor website. Processing continues if you leave this page. A matching confirmation marks this invoice paid automatically.</p>
     {!enabled && <p className="mb-0">Demo payments are not configured on this server.</p>}
     {attempt && <p className={`d-flex flex-wrap align-items-center gap-2 mb-0 text-${bannerColor(attempt.status)}-emphasis`} role="status" aria-live="polite">
-      <CIcon icon={paymentIcons[bannerIcon(attempt.status)]} aria-hidden="true" className={running ? "payment-banner-spin" : undefined} />
+      <CIcon icon={paymentIcons[bannerIcon(attempt.status)]} size="lg" aria-hidden="true" className={running ? "payment-banner-spin" : undefined} />
       <strong>{bannerLabel(attempt.status)}</strong>
       {attempt.run_id && <span className="small text-body-secondary">Browser Use task <code>{attempt.run_id}</code></span>}
       {lastChecked && <span className="small text-body-secondary">Checked {lastChecked}</span>}

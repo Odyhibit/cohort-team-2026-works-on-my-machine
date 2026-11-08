@@ -8,7 +8,7 @@ import CIcon from "@coreui/icons-react";
 import { getPaymentBanners } from "@/app/invoices/payment-actions";
 import { paymentIcons } from "@/lib/invoices/payment-icons";
 import {
-  PAYMENT_BANNER_REFRESH, bannerColor, bannerDismissible, bannerIcon, dismissKey, isActive, visibleBanners, type PaymentBannerItem,
+  PAYMENT_BANNER_REFRESH, bannerColor, bannerDismissible, bannerIcon, bannerInvoiceLabel, dismissKey, isActive, visibleBanners, type PaymentBannerItem,
 } from "@/lib/invoices/payment-banner";
 
 const STORAGE_KEY = "payment-banner-dismissed";
@@ -110,11 +110,11 @@ export default function PaymentBanner() {
   return <div className="d-grid gap-2 mb-4">
     {shown.map((item) => <CAlert key={dismissKey(item)} color={bannerColor(item.status)} dismissible={bannerDismissible(item.status)}
       onClose={() => dismiss(item)} className="d-flex align-items-start gap-2 mb-0" role="status" aria-live="polite">
-      <CIcon icon={paymentIcons[bannerIcon(item.status)]} className={`flex-shrink-0 mt-1${item.status === "running" ? " payment-banner-spin" : ""}`} aria-hidden="true" />
+      <CIcon icon={paymentIcons[bannerIcon(item.status)]} size="xl" className={`flex-shrink-0${item.status === "running" ? " payment-banner-spin" : ""}`} aria-hidden="true" />
       <div>
         <div>{item.message}</div>
         {item.run_id && <p className="small mb-0">Browser Use task: <code>{item.run_id}</code></p>}
-        <Link href={`/invoices/${item.invoice_id}/edit`} className="alert-link">View invoice {item.reference_number ?? ""}</Link>
+        <Link href={`/invoices/${item.invoice_id}/edit`} className="alert-link" aria-label={`View invoice: ${bannerInvoiceLabel(item)}`}>{bannerInvoiceLabel(item)}</Link>
       </div>
     </CAlert>)}
     {hiddenCount > 0 && <p className="small text-body-secondary mb-0">+{hiddenCount} more {hiddenCount === 1 ? "payment" : "payments"}</p>}
