@@ -65,3 +65,12 @@ export function visibleBanners<T extends Pick<PaymentBannerItem, "id" | "status"
     .sort((a, b) => Number(isActive(b.status)) - Number(isActive(a.status)) || time(b) - time(a));
   return { shown: open.slice(0, max), hiddenCount: Math.max(0, open.length - max) };
 }
+
+export function mergeAttemptRows<T extends { id: string }>(active: T[], recent: T[]): T[] {
+  const seen = new Set<string>();
+  return [...active, ...recent].filter((row) => !seen.has(row.id) && !!seen.add(row.id));
+}
+
+export function addDismissed(keys: string[], key: string, max = 200): string[] {
+  return [...keys.filter((k) => k !== key), key].slice(-max);
+}

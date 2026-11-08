@@ -8,7 +8,7 @@ import CIcon from "@coreui/icons-react";
 import { getPaymentBanners } from "@/app/invoices/payment-actions";
 import { paymentIcons } from "@/lib/invoices/payment-icons";
 import {
-  PAYMENT_BANNER_REFRESH, bannerColor, bannerDismissible, bannerIcon, bannerInvoiceLabel, dismissKey, isActive, visibleBanners, type PaymentBannerItem,
+  PAYMENT_BANNER_REFRESH, addDismissed, bannerColor, bannerLabel, bannerDismissible, bannerIcon, bannerInvoiceLabel, dismissKey, isActive, visibleBanners, type PaymentBannerItem,
 } from "@/lib/invoices/payment-banner";
 
 const STORAGE_KEY = "payment-banner-dismissed";
@@ -16,7 +16,7 @@ const STORAGE_KEY = "payment-banner-dismissed";
 function readDismissed(): string[] {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
-    return Array.isArray(parsed) ? parsed.filter((k): k is string => typeof k === "string") : [];
+    return Array.isArray(parsed) ? parsed.filter((k): k is string => typeof k === "string").slice(-200) : [];
   } catch { return []; }
 }
 
@@ -39,17 +39,9 @@ export default function PaymentBanner() {
     if (document.visibilityState === "hidden") return;
     try {
       const next = await getPaymentBanners();
+      if (next === null) return;
       setItems(next);
       if (scroll) setPendingScroll(true);
-      if (next.length > 0) {
-        const ids = new Set(next.map((item) => item.id));
-        setDismissed((previous) => {
-          const kept = previous.filter((key) => ids.has(key.slice(0, key.lastIndexOf(":"))));
-          if (kept.length === previous.length) return previous;
-          writeDismissed(kept);
-          return kept;
-        });
-      }
     } catch { /* keep showing the last known banners */ }
   }, []);
 
@@ -86,8 +78,7 @@ export default function PaymentBanner() {
   function dismiss(item: PaymentBannerItem) {
     const key = dismissKey(item);
     setDismissed((previous) => {
-      if (previous.includes(key)) return previous;
-      const next = [...previous, key];
+      const next = addDismissed(previous, key);
       writeDismissed(next);
       return next;
     });
@@ -112,7 +103,7 @@ export default function PaymentBanner() {
       onClose={() => dismiss(item)} className="d-flex align-items-start gap-2 mb-0" role="status" aria-live="polite">
       <CIcon icon={paymentIcons[bannerIcon(item.status)]} size="xl" className={`flex-shrink-0${item.status === "running" ? " payment-banner-spin" : ""}`} aria-hidden="true" />
       <div>
-        <div>{item.message}</div>
+        <div><strong>{bannerLabel(item.status)}:</strong> {item.message}</div>
         {item.run_id && <p className="small mb-0">Browser Use task: <code>{item.run_id}</code></p>}
         <Link href={`/invoices/${item.invoice_id}/edit`} className="alert-link" aria-label={`View invoice: ${bannerInvoiceLabel(item)}`}>{bannerInvoiceLabel(item)}</Link>
       </div>

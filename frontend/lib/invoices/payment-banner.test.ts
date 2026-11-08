@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bannerInvoiceLabel, bannerColor, bannerLabel, bannerDismissible, bannerIcon, dismissKey, isActive, latestPerInvoice, visibleBanners, type PaymentBannerItem } from "./payment-banner";
+import { addDismissed, mergeAttemptRows, bannerInvoiceLabel, bannerColor, bannerLabel, bannerDismissible, bannerIcon, dismissKey, isActive, latestPerInvoice, visibleBanners, type PaymentBannerItem } from "./payment-banner";
 
 const item = (id: string, status: PaymentBannerItem["status"], updated_at: string, invoice_id = id): PaymentBannerItem => ({
   id, status, updated_at, created_at: updated_at, run_id: null, message: "m",
@@ -78,4 +78,19 @@ test("different invoices are both kept", () => {
   const a = item("a", "failed", "2026-11-05T00:00:00Z", "inv-a");
   const b = item("b", "failed", "2026-11-05T01:00:00Z", "inv-b");
   assert.deepEqual(visibleBanners([a, b], []).shown, [b, a]);
+});
+
+test("active rows are kept even when recent rows fill the limit, active first, duplicates removed", () => {
+  const active = [{ id: "act" }, { id: "dup" }];
+  const recent = [{ id: "dup" }, ...Array.from({ length: 49 }, (_, n) => ({ id: `r${n}` }))];
+  const merged = mergeAttemptRows(active, recent);
+  assert.equal(merged.length, 51);
+  assert.deepEqual(merged.slice(0, 2).map((r) => r.id), ["act", "dup"]);
+  assert.equal(new Set(merged.map((r) => r.id)).size, merged.length);
+});
+
+test("addDismissed appends, avoids duplicates and caps keeping the newest", () => {
+  assert.deepEqual(addDismissed(["a"], "b"), ["a", "b"]);
+  assert.deepEqual(addDismissed(["a", "b"], "a"), ["b", "a"]);
+  assert.deepEqual(addDismissed(["a", "b", "c"], "d", 3), ["b", "c", "d"]);
 });
