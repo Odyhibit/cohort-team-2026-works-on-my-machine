@@ -41,7 +41,7 @@ export async function startBrowserPayment(expected: PaymentSnapshot): Promise<st
     task: paymentPrompt(expected),
     outputSchema: paymentOutputSchema,
     model: "gpt-6-luna",
-    modelParams: { reasoning: { effort: "medium" } },
+    modelParams: { reasoning: { effort: "high" } },
     maxCostUsd: 0.50,
   });
   if (typeof result.id !== "string" || !uuid.test(result.id)) throw new BrowserUseError("The task ID could not be read. Check Browser Use before retrying.");
