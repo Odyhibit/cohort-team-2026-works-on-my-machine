@@ -8,6 +8,7 @@ import type { ExtractionResult } from "@/lib/invoices/extraction";
 import { invoiceStatusLabels, isInvoiceLocked } from "@/lib/invoices/status";
 import { ruleReasonLabel } from "@/lib/invoices/rule-reasons";
 import { isAutoPayable } from "@/lib/invoices/payment-gate";
+import { requestBannerRefresh } from "@/lib/invoices/payment-banner";
 import { approveInvoice, createInvoice, updateInvoice, type InvoiceInput } from "./actions";
 import AppDialog from "@/components/AppDialog.client";
 import VendorForm from "@/app/vendors/VendorForm.client";
@@ -179,6 +180,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
       attachment = { path: result.path, name: result.name };
     }
     const result = await createInvoice(details, attachment);
+    requestBannerRefresh({ scroll: true });
     // Next.js can retain this form's state when navigating back to /new.
     // Reset after success, before either creation path navigates away.
     if (!("error" in result) && activeVisit.current) resetNewInvoice();
@@ -406,6 +408,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
             <CButton color="success" size="sm" type="button" disabled={saving || isDirty} title={isDirty ? "Save your changes before approving" : undefined} onClick={() => startSaving(async () => {
               try {
                 const result = await approveInvoice(invoice.id);
+                requestBannerRefresh({ scroll: true });
                 if (result) setNotification({ color: "danger", message: result.error });
                 else router.refresh();
               } catch (error) {

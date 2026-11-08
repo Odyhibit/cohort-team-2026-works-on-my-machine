@@ -2,7 +2,7 @@
 
 **Applies to:** Next.js 16.4.2, React 19.3.0, and the Supabase server client used in `frontend/`.
 
-The Vendors feature established the list → new/edit structure. Properties follows the same routes, table layout and shared form pattern. Invoices follows it and reuses a single form for creation and editing, with an optional PDF extraction step. Users follows the same navigation and page layout, with a separate creation path because a new account is created in Supabase Auth. Activity (`/events`) is a read-only page for the audit history produced by invoice, vendor, and property writes. Read [Next.js Server / Client Pattern](./nextjs-server-client.md) and [Supabase Data Fetching](./supabase-data-fetching.md) for the underlying conventions.
+The Vendors feature established the list → new/edit structure. Invoices follows it and reuses a single form for creation and editing, with an optional PDF extraction step. Properties keeps its list and form on one page: `?edit=<id>` loads a property into the form. Users follows the same navigation and page layout, with a separate creation path because a new account is created in Supabase Auth. Rules (`/rules`) is an admin-only settings form for the automatic approval thresholds. Activity (`/events`) is a read-only page for the audit history produced by invoice, vendor, and property writes. Read [Next.js Server / Client Pattern](./nextjs-server-client.md) and [Supabase Data Fetching](./supabase-data-fetching.md) for the underlying conventions.
 
 ## File map
 
@@ -45,6 +45,17 @@ frontend/app/
 │   │   └── NewInvoiceSession.client.tsx  Remount the draft after leaving the cached new-invoice page
 │   └── [id]/edit/
 │       └── page.tsx               /invoices/:id/edit: load invoice and choices, then form
+├── properties/
+│   ├── layout.tsx                 Route metadata
+│   ├── page.tsx                   /properties: server auth, active property list; ?edit=<id> fills the form
+│   ├── actions.ts                 Server Actions: save property and archive property
+│   ├── PropertyForm.client.tsx    Shared new/edit form; History link for admins
+│   └── test/                      Canonical server/client reference pattern (see code-patterns index)
+├── rules/
+│   ├── layout.tsx                 Route metadata
+│   ├── page.tsx                   /rules: admin check, load approval_rule_settings
+│   ├── actions.ts                 Server Action: admin-only threshold validation and save
+│   └── RulesForm.client.tsx       Threshold fields, pending state, result messages
 └── users/
     ├── layout.tsx                 Route metadata
     ├── page.tsx                   /users: admin check, profile query, clickable list
@@ -67,6 +78,7 @@ Shared pieces live outside the routes:
 - [`ArchiveButton.client.tsx`](../../frontend/components/ArchiveButton.client.tsx) supplies the confirmation and pending state for vendor, invoice, and property archiving. User profiles do not currently have an archive action.
 - [`nav.tsx`](../../frontend/components/layout/nav.tsx) links the sidebar to resource lists and Activity, and supplies breadcrumb names for their routes. Rules, Activity, and Users sit under Admin; `SidebarNavigation.tsx` reads the current role on the server and passes an admin flag to the client navigation.
 - [`roles.ts`](../../frontend/lib/users/roles.ts) defines the Clerk, Approver, and Admin choices shared by the new/edit user forms. `lib/users/access.ts` supplies request-scoped role lookup and admin page guards.
+- [`PaymentBanner.client.tsx`](../../frontend/components/PaymentBanner.client.tsx) renders below the breadcrumb in `AppShell.client.tsx`. It polls `getPaymentBanners` in `payment-actions.ts` and names the vendor and amount for each payment state. Dismissals are kept per browser in `localStorage`; state, labels and refresh timing live in [`payment-banner.ts`](../../frontend/lib/invoices/payment-banner.ts).
 - [`status.ts`](../../frontend/lib/invoices/status.ts) defines the selectable invoice statuses and display labels.
 - [`extract-invoice.ts`](../../frontend/lib/invoices/extract-invoice.ts) and [`invoice-parser.ts`](../../frontend/lib/invoices/invoice-parser.ts) turn PDF text into suggested form values.
 - [`extraction.ts`](../../frontend/lib/invoices/extraction.ts) validates parsed values and calls the server-only [`ai-extraction.ts`](../../frontend/lib/invoices/ai-extraction.ts) document reader when required fields are missing. Complete validated parser or AI results allow automatic intake; incomplete results require correction. See [AI extraction setup](../PLANS/ai-invoice-extraction.md).

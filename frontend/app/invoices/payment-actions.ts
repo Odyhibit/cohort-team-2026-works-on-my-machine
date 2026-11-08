@@ -10,6 +10,8 @@ import { start } from "workflow/api";
 import { completeInvoicePayment } from "@/workflows/invoice-payment";
 import { paymentView as view, type PaymentView } from "@/lib/invoices/payment-view";
 
+import { mergeAttemptRows, type PaymentBannerItem } from "@/lib/invoices/payment-banner";
+
 export type { PaymentView } from "@/lib/invoices/payment-view";
 export type PaymentState = { attempt?: PaymentView; error?: string };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,6 +37,43 @@ async function latest(supabase: Awaited<ReturnType<typeof createClient>>, invoic
     .eq("invoice_id", invoiceId).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw new Error(error.message);
   return data as PaymentAttempt | null;
+}
+
+// Read-only feed for the sitewide payment banner. Never throws to the client.
+export async function getPaymentBanners(): Promise<PaymentBannerItem[] | null> {
+  try {
+    const supabase = await createClient();
+    const { data: auth } = await supabase.auth.getClaims();
+    if (!auth?.claims) return [];
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const columns = "id, invoice_id, run_id, status, message, result, created_at, updated_at, invoices(reference_number, amount, vendors(name))";
+    const [active, recent] = await Promise.all([
+      supabase.from("invoice_payment_attempts").select(columns)
+        .in("status", ["starting", "running", "uncertain"]).order("updated_at", { ascending: false }).limit(50),
+      supabase.from("invoice_payment_attempts").select(columns)
+        .in("status", ["succeeded", "failed"]).gte("updated_at", since).order("updated_at", { ascending: false }).limit(50),
+    ]);
+    if (active.error || recent.error || !active.data || !recent.data) return null;
+    const data = mergeAttemptRows(active.data, recent.data);
+    return data.map((row) => {
+      const embed = (row as { invoices?: unknown }).invoices;
+      type Embed = { reference_number?: string | null; amount?: number | string | null; vendors?: unknown };
+      const invoice = (Array.isArray(embed) ? embed[0] : embed) as Embed | null | undefined;
+      const vendorEmbed = invoice?.vendors;
+      const vendor = (Array.isArray(vendorEmbed) ? vendorEmbed[0] : vendorEmbed) as { name?: string | null } | null | undefined;
+      const amount = invoice?.amount == null || invoice.amount === "" ? NaN : Number(invoice.amount);
+      return {
+        ...view(row as unknown as PaymentAttempt),
+        invoice_id: row.invoice_id as string,
+        reference_number: invoice?.reference_number ?? null,
+        vendor_name: vendor?.name ?? null,
+        amount: Number.isFinite(amount) ? amount : null,
+        updated_at: row.updated_at as string,
+      };
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function startDemoPayment(invoiceId: string): Promise<PaymentState> {
