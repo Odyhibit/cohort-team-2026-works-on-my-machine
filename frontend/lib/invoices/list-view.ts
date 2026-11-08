@@ -1,13 +1,13 @@
 export type InvoiceView = "active" | "paid" | "all";
 
 export function invoiceView(value: string | string[] | undefined): InvoiceView {
-  return value === "paid" || value === "all" ? value : "active";
+  return value === "active" || value === "paid" ? value : "all";
 }
 
 export function invoiceListUrl(view: InvoiceView): string {
-  return view === "active" ? "/invoices" : `/invoices?view=${view}`;
+  return view === "all" ? "/invoices" : `/invoices?view=${view}`;
 }
 
 export function invoiceEditUrl(id: string, view: InvoiceView): string {
-  return `/invoices/${id}/edit${view === "active" ? "" : `?view=${view}`}`;
+  return `/invoices/${id}/edit${view === "all" ? "" : `?view=${view}`}`;
 }
