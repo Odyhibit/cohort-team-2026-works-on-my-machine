@@ -22,7 +22,7 @@ const DUE_DATE_LABELS = [
 ];
 
 const INVOICE_NUMBER_PATTERNS = [
-  /\bBILL-\d+(?:-[A-Z0-9]+)?\b/i,
+  /\bBILL-(?=[A-Z0-9]*\d)[A-Z0-9]+(?:-[A-Z0-9]+)?\b/i,
   /\bINV[- ]\d+[A-Z0-9-]*\b/i,
   /\b[A-Z]{2,}-\d{3,}[A-Z0-9-]*\b/i,
 ];
@@ -47,7 +47,7 @@ const HEADER_TITLES = [
 const HEADER_SUFFIXES = [
   /\s+ACCOUNT RECONCILIATION$/i,
   /\s+INVOICE$/i,
-  /\s+BILL-\d+(?:-[A-Z0-9]+)?\b.*$/i,
+  /\s+BILL-(?=[A-Z0-9]*\d)[A-Z0-9]+(?:-[A-Z0-9]+)?\b.*$/i,
 ];
 
 const MONTHS = new Map([
