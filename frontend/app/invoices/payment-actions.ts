@@ -2,9 +2,10 @@
 
 import { refresh, revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
-import { BrowserUseError, browserUseConfigured, readBrowserPayment, startBrowserPayment } from "@/lib/invoices/browser-use";
+import { BrowserUseError, browserUseConfigured, readBrowserPayment, readBrowserPaymentStatus, startBrowserPayment } from "@/lib/invoices/browser-use";
 import type { PaymentAttempt } from "@/lib/invoices/payment";
 import { reconcilePaymentAttempt } from "@/lib/invoices/reconcile-payment";
+import { checkPaymentTaskForReview } from "@/lib/invoices/payment-review";
 import { paymentWorkerConfigured } from "@/lib/invoices/payment-worker-client";
 import { start } from "workflow/api";
 import { completeInvoicePayment } from "@/workflows/invoice-payment";
@@ -154,10 +155,7 @@ export async function resolveDemoPayment(invoiceId: string, form: FormData): Pro
     const confirmation = String(form.get("confirmation") ?? "").trim();
     const reason = String(form.get("reason") ?? "").trim();
     if (confirmation.length > 200 || !reason || reason.length > 500) return { error: "Enter a review note of up to 500 characters and a confirmation of up to 200 characters." };
-    if (attempt.run_id) {
-      const run = await readBrowserPayment(attempt.run_id);
-      if (["queued", "dispatching", "running"].includes(run.status)) return { error: "The task is still running. Wait for it to stop before resolving the payment." };
-    }
+    await checkPaymentTaskForReview(attempt.run_id, readBrowserPaymentStatus);
     const { error } = await supabase.rpc("resolve_invoice_payment", {
       p_attempt_id: attempt.id, p_confirmation: confirmation || null, p_reason: reason,
     });

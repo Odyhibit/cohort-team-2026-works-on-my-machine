@@ -6,7 +6,7 @@ import CIcon from "@coreui/icons-react";
 import { bannerColor, bannerIcon, bannerLabel, requestBannerRefresh } from "@/lib/invoices/payment-banner";
 import { paymentIcons } from "@/lib/invoices/payment-icons";
 import { checkDemoPayment, resolveDemoPayment, startDemoPayment, type PaymentState, type PaymentView } from "./payment-actions";
-import { CAlert, CButton, CCard, CCardBody, CProgress } from "@coreui/react";
+import { CProgress } from "@coreui/react";
 
 async function requestPayment(action: () => Promise<PaymentState>): Promise<PaymentState> {
   try { return await action(); }
@@ -20,11 +20,13 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
   const prefix = useId();
   const [state, setState] = useState<PaymentState>({ attempt: initialAttempt ?? undefined });
   const [confirmationDraft, setConfirmationDraft] = useState<{ attemptId: string; value: string } | null>(null);
+  const [reviewDraft, setReviewDraft] = useState<{ attemptId: string; reason: string; reviewed: boolean } | null>(null);
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const attempt = state.attempt;
   const polling = attempt?.status === "starting" || attempt?.status === "running";
   const running = attempt?.status === "running";
+  const review = reviewDraft?.attemptId === attempt?.id ? reviewDraft : null;
 
   function accept(next: PaymentState, scroll = true) {
     setState((previous) => ({ ...next, attempt: next.attempt ?? previous.attempt }));
@@ -133,7 +135,7 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
           />
 
           <small className="text-body-secondary">
-            Please don't submit another payment while processing.
+            Please don&apos;t submit another payment while processing.
           </small>
         </div>
       )}
@@ -205,6 +207,11 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
               no payment occurred.
             </p>
 
+            <p className="small text-body-secondary mb-0">
+              If the task belongs to another Browser Use account or is no longer
+              available, verify the outcome manually before saving this review.
+            </p>
+
             <label htmlFor={`${prefix}-confirmation`}>
               Verified confirmation number (if paid)
             </label>
@@ -244,10 +251,22 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
               required
               maxLength={500}
               className="form-control"
+              value={review?.reason ?? ""}
+              onChange={(event) => setReviewDraft({
+                attemptId: attempt.id,
+                reason: event.target.value,
+                reviewed: review?.reviewed ?? false,
+              })}
             />
 
             <label>
-              <input type="checkbox" name="reviewed" required />{" "}
+              <input type="checkbox" name="reviewed" required
+                checked={review?.reviewed ?? false}
+                onChange={(event) => setReviewDraft({
+                  attemptId: attempt.id,
+                  reason: review?.reason ?? "",
+                  reviewed: event.target.checked,
+                })} />{" "}
               I confirmed the task has stopped and checked payment history.
             </label>
 
