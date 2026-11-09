@@ -3,7 +3,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CAlert, CButton, CForm, CFormInput, CFormSelect } from "@coreui/react";
+import { CAlert, CButton, CForm, CFormInput, CFormSelect, CSpinner } from "@coreui/react";
 import type { ExtractionResult } from "@/lib/invoices/extraction";
 import { invoiceStatusLabels, isInvoiceLocked } from "@/lib/invoices/status";
 import { ruleReasonLabel } from "@/lib/invoices/rule-reasons";
@@ -111,6 +111,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
   const locked = isInvoiceLocked(invoice?.fields.status);
   const isDirty = !!invoice && (["vendorId", "propertyId", "invoiceNumber", "amountDue", "dueDate", "paymentUrl"] as const).some((key) => fields[key] !== invoice.fields[key]);
   const paymentUnresolved = demoPayment?.attempt && ["starting", "running", "uncertain"].includes(demoPayment.attempt.status);
+  const [isLoading, startTransition] = useTransition();
 
   useLayoutEffect(() => {
     activeVisit.current = true;
@@ -316,7 +317,25 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
           {selectedFile && <CButton color="secondary" type="button" disabled={extracting || saving}
             onClick={() => void extractDetails(selectedFile)}>{extracting ? "Reading invoice…" : "Retry extraction"}</CButton>}
           <p className="small mb-0">Complete invoices are saved automatically. Approval rules and vendor autopay settings determine whether payment starts.</p>
-        </> : <button type="button" className="btn btn-outline-secondary" onClick={() => router.refresh()}>Refresh document</button>}
+          </> : (
+  <CButton
+    color="secondary"
+    variant="outline"
+    type="button"
+    disabled={isLoading}
+    onClick={() => startTransition(() => router.refresh())}
+  >
+    {isLoading && (
+      <CSpinner
+        as="span"
+        size="sm"
+        className="me-2"
+        aria-hidden="true"
+      />
+    )}
+    {isLoading ? "Refreshing document..." : "Refresh document"}
+  </CButton>
+)}
       </InvoiceDocumentPreview>
 
       <section className={styles.formPanel} aria-labelledby="invoice-form-heading">
