@@ -78,19 +78,26 @@ body {
   place-items: center;
   padding: clamp(0.75rem, 3vw, 2rem);
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.28);
+}
+
+// Scope CoreUI's backdrop to the content area instead of the whole viewport.
+.payment-focus-backdrop {
+  --cui-backdrop-opacity: 0.28;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
   backdrop-filter: blur(2px);
 }
 
 .payment-focus-panel {
+  position: relative;
+  z-index: 1;
   width: min(100%, 44rem);
   max-height: 100%;
   overflow: auto;
   overscroll-behavior: contain;
-  border: 1px solid var(--cui-border-color);
-  border-radius: 0.75rem;
-  background: var(--cui-body-bg);
-  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2);
 
   > section {
     margin-top: 0 !important;

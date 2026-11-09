@@ -33,6 +33,10 @@ test("payment focus blocks page content while preserving navigation and releases
     assert.equal(navigation.closest("[inert]"), null);
     assert.equal(dom.window.document.body.style.overflow, "hidden");
     const dialog = portal.querySelector('[role="dialog"]')!;
+    assert.ok(dialog.classList.contains("card"), "payment panel uses CoreUI's card");
+    const backdrop = portal.querySelector(".modal-backdrop.payment-focus-backdrop")!;
+    assert.equal(backdrop.getAttribute("aria-hidden"), "true");
+    assert.ok(backdrop.closest(".payment-focus-overlay"), "CoreUI backdrop stays inside the content overlay");
     assert.equal(dialog.getAttribute("aria-modal"), "false");
     assert.equal(dialog.getAttribute("aria-labelledby"), "payment-title");
     assert.equal(dom.window.document.activeElement, dialog);

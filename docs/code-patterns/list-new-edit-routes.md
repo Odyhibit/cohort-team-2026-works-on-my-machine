@@ -41,7 +41,7 @@ frontend/app/
 │   ├── InvoiceForm.client.tsx     Shared new/edit fields; optional PDF preview and extraction
 │   ├── payment-actions.ts        Authenticated Browser Use start, completion, and recovery
 │   ├── DemoPayment.client.tsx     Progress polling and demo payment controls on approved invoices
-│   ├── PaymentFocus.client.tsx    Content-area payment overlay; navigation stays usable during processing/review
+│   ├── PaymentFocus.client.tsx    CoreUI card/backdrop payment overlay; navigation stays usable during processing/review
 │   ├── invoice-form.module.scss   Layout and form styles shared by new and edit pages
 │   ├── new/
 │   │   ├── page.tsx               /invoices/new: load vendor/property choices, then form

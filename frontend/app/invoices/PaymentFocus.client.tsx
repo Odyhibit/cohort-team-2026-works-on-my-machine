@@ -2,12 +2,14 @@
 
 import { useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { CBackdrop, CCard } from "@coreui/react";
 
 const subscribe = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
 
-// A nonmodal dialog: only page content becomes inert; app navigation stays usable.
+// CoreUI supplies the backdrop and card. Keep this nonmodal so navigation stays
+// usable; a standard CModal would trap focus away from the header and sidebar.
 export default function PaymentFocus({ active, labelledBy, children }: {
   active: boolean; labelledBy: string; children: ReactNode;
 }) {
@@ -51,9 +53,10 @@ export default function PaymentFocus({ active, labelledBy, children }: {
   if (!active || !host) return children;
   return createPortal(
     <div ref={overlay} className="payment-focus-overlay">
-      <div ref={panel} className="payment-focus-panel" role="dialog" aria-modal="false" aria-labelledby={labelledBy} tabIndex={-1}>
+      <CBackdrop visible className="modal-backdrop payment-focus-backdrop" aria-hidden="true" />
+      <CCard ref={panel} className="payment-focus-panel shadow-lg" role="dialog" aria-modal="false" aria-labelledby={labelledBy} tabIndex={-1}>
         {children}
-      </div>
+      </CCard>
     </div>, host,
   );
 }
