@@ -19,11 +19,13 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
   const prefix = useId();
   const [state, setState] = useState<PaymentState>({ attempt: initialAttempt ?? undefined });
   const [confirmationDraft, setConfirmationDraft] = useState<{ attemptId: string; value: string } | null>(null);
+  const [reviewDraft, setReviewDraft] = useState<{ attemptId: string; reason: string; reviewed: boolean } | null>(null);
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const attempt = state.attempt;
   const polling = attempt?.status === "starting" || attempt?.status === "running";
   const running = attempt?.status === "running";
+  const review = reviewDraft?.attemptId === attempt?.id ? reviewDraft : null;
 
   function accept(next: PaymentState, scroll = true) {
     setState((previous) => ({ ...next, attempt: next.attempt ?? previous.attempt }));
@@ -88,14 +90,18 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
       <summary>Resolve after checking payment history</summary>
       <form className="d-grid gap-3 mt-3" action={(form) => startTransition(async () => { accept(await requestPayment(() => resolveDemoPayment(invoiceId, form))); })}>
         <p className="mb-0">In Browser Use, confirm the task has finished or stop it. Then check the vendor receipt and history. Enter its confirmation if paid; leave it blank only if you verified no payment occurred.</p>
+        <p className="small text-body-secondary mb-0">If the task belongs to another Browser Use account or is no longer available, verify the outcome manually before saving this review.</p>
         <label htmlFor={`${prefix}-confirmation`}>Verified confirmation number (if paid)</label>
         <input id={`${prefix}-confirmation`} name="confirmation" maxLength={200} className="form-control"
           value={confirmationDraft?.attemptId === attempt.id ? confirmationDraft.value : attempt.suggested_confirmation ?? ""}
           onChange={(event) => setConfirmationDraft({ attemptId: attempt.id, value: event.target.value })} />
         {attempt.suggested_confirmation && <p className="small text-body-secondary mb-0">Prefilled from the AI result. Verify it against the vendor receipt before saving.</p>}
         <label htmlFor={`${prefix}-reason`}>Review note</label>
-        <textarea id={`${prefix}-reason`} name="reason" required maxLength={500} className="form-control" />
-        <label><input type="checkbox" name="reviewed" required /> I confirmed the task has stopped and checked payment history.</label>
+        <textarea id={`${prefix}-reason`} name="reason" required maxLength={500} className="form-control"
+          value={review?.reason ?? ""}
+          onChange={(event) => setReviewDraft({ attemptId: attempt.id, reason: event.target.value, reviewed: review?.reviewed ?? false })} />
+        <label><input type="checkbox" name="reviewed" required checked={review?.reviewed ?? false}
+          onChange={(event) => setReviewDraft({ attemptId: attempt.id, reason: review?.reason ?? "", reviewed: event.target.checked })} /> I confirmed the task has stopped and checked payment history.</label>
         <div><button className="btn btn-outline-primary" disabled={pending}>Save reviewed outcome</button></div>
       </form>
     </details>}

@@ -104,4 +104,22 @@ test("prompt carries the invoice data and instructs a single submission and hist
   assert.match(prompt, /do not discard a number you already verified earlier on the site/);
   assert.match(prompt, /treat a dollar sign as USD/i);
   assert.match(prompt, /Missing currency or identifiers alone must not/);
+  assert.match(prompt, /If there is no Pay button, look for a "View receipt" link/);
+  assert.match(prompt, /return outcome "succeeded" with that existing confirmation and amount/);
+  assert.match(prompt, /Do not pay again/);
+});
+
+test("demo shortcut URLs stay on the invoice's allowed host and encode the invoice reference", () => {
+  const prompt = paymentPrompt({ ...expected,
+    payment_url: "https://sunmeadow-utility-demo.vercel.app/old?invoice=OTHER#old",
+    invoice_number: "BILL /1001?#",
+  });
+  assert.ok(prompt.includes("https://sunmeadow-utility-demo.vercel.app/#signin/account"));
+  assert.ok(prompt.includes("https://sunmeadow-utility-demo.vercel.app/#pay/BILL%20%2F1001%3F%23"));
+  assert.match(prompt, /demo@acme\.com/);
+  assert.match(prompt, /demo123/);
+  assert.match(prompt, /Load sample details/);
+  assert.match(prompt, /Pay \$287\.61/);
+  assert.match(prompt, /Do not assume the hints apply to every vendor/);
+  assert.ok(prompt.indexOf("check payment history") < prompt.indexOf("For an unpaid matching invoice"));
 });
