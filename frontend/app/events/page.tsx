@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/users/access";
 import { loadEventRecords } from "@/lib/events/records";
 import FilterForm, { type FilterOptions, type FilterType } from "./FilterForm.client";
+import styles from "./events.module.scss";
 
 type Props = { searchParams: Promise<{ [key: string]: string | string[] | undefined }> };
 type Change = { old: unknown; new: unknown };
@@ -66,7 +67,7 @@ function filterType(value: string): value is FilterType {
 }
 
 function valueText(field: string, value: unknown, names: Record<string, Map<string, string>>) {
-  if (value === null || value === undefined || value === "") return "—";
+  if (value === null || value === undefined || value === "") return "";
   if (field === "deleted_by") return names[field].get(String(value)) ?? "Former user";
   if (field === "vendor_id" || field === "property_id") return names[field].get(String(value)) ?? String(value);
   if (field === "deleted_at") {
@@ -170,26 +171,33 @@ async function EventViewer({ searchParams }: Props) {
                     : options.property.find((option) => option.id === event.property_id)?.label;
                 const actorName = event.actor_type === "system" ? "System"
                   : event.actor_user_id ? actors.get(event.actor_user_id) ?? "Former user" : "Former user";
-                // The audit trigger logs empty fields on insert, so skip changes that would read "— → —".
+                // The audit trigger logs empty fields on insert; skip wholly empty rows.
                 const changes = Object.entries(event.changes ?? {}).filter(([field, change]) => field !== "id"
-                  && (valueText(field, change?.old, changeNames) !== "—" || valueText(field, change?.new, changeNames) !== "—"));
+                  && (valueText(field, change?.old, changeNames) !== "" || valueText(field, change?.new, changeNames) !== ""));
                 return (
                   <li key={event.id} className="list-group-item">
                     <div className="d-flex flex-wrap justify-content-between gap-2">
                       <div><span className={`badge ${actionBadge[event.action] ?? "text-bg-secondary"} me-2 text-capitalize`}>{event.action}</span><strong>{target ?? "Record"}</strong></div>
-                      <time className="text-body-secondary small" dateTime={event.occurred_at}>{dateFormat.format(new Date(event.occurred_at))}</time>
+                      <div className={styles.metadata}>
+                        {event.actor_user_id && event.actor_type === "user"
+                          ? <Link href={`/events?type=actor&id=${event.actor_user_id}`} className={styles.actor}>{actorName}</Link> : <span>{actorName}</span>}
+                        <time dateTime={event.occurred_at}>{dateFormat.format(new Date(event.occurred_at))}</time>
+                      </div>
                     </div>
-                    <p className="small text-body-secondary mb-1">By {event.actor_user_id && event.actor_type === "user"
-                      ? <Link href={`/events?type=actor&id=${event.actor_user_id}`}>{actorName}</Link> : actorName}</p>
-                    {event.reason && <p className="mb-1">Reason: {event.reason}</p>}
-                    {changes.length > 0 && <details open={event.action === "updated" || event.action === "approved"}>
-                      <summary>Changed fields</summary>
-                      <ul className="mb-0 mt-2 small">
-                        {changes.map(([field, change]) => (
-                          <li key={field}><strong>{fieldLabels[field] ?? field.replaceAll("_", " ")}:</strong> {valueText(field, change?.old, changeNames)} → {valueText(field, change?.new, changeNames)}</li>
-                        ))}
-                      </ul>
-                    </details>}
+                    {event.reason && <p className="small text-body-secondary mt-2 mb-0">Reason: {event.reason}</p>}
+                    {changes.length > 0 && <div className={styles.changeTable}><table className={styles.changes} aria-label={`Field changes for ${target ?? "record"}`}>
+                      <colgroup><col className={styles.fieldColumn} /><col className={styles.beforeColumn} /><col /></colgroup>
+                      <thead className="visually-hidden">
+                        <tr><th scope="col">Field</th><th scope="col">Before</th><th scope="col">After</th></tr>
+                      </thead>
+                      <tbody>
+                        {changes.map(([field, change]) => <tr key={field}>
+                          <th scope="row">{fieldLabels[field] ?? field.replaceAll("_", " ")}</th>
+                          <td>{valueText(field, change?.old, changeNames) || <><span aria-hidden="true" className="text-body-secondary">—</span><span className="visually-hidden">Not set</span></>}</td>
+                          <td>{valueText(field, change?.new, changeNames) || <><span aria-hidden="true" className="text-body-secondary">—</span><span className="visually-hidden">Not set</span></>}</td>
+                        </tr>)}
+                      </tbody>
+                    </table></div>}
                   </li>
                 );
               })}
