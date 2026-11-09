@@ -7,6 +7,7 @@ import { bannerColor, bannerIcon, bannerLabel, requestBannerRefresh } from "@/li
 import { paymentIcons } from "@/lib/invoices/payment-icons";
 import { checkDemoPayment, resolveDemoPayment, startDemoPayment, type PaymentState, type PaymentView } from "./payment-actions";
 import { CProgress } from "@coreui/react";
+import PaymentFocus from "./PaymentFocus.client";
 
 async function requestPayment(action: () => Promise<PaymentState>): Promise<PaymentState> {
   try { return await action(); }
@@ -26,6 +27,7 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
   const attempt = state.attempt;
   const polling = attempt?.status === "starting" || attempt?.status === "running";
   const running = attempt?.status === "running";
+  const focused = Boolean(attempt && ["starting", "running", "uncertain"].includes(attempt.status));
   const review = reviewDraft?.attemptId === attempt?.id ? reviewDraft : null;
 
   function accept(next: PaymentState, scroll = true) {
@@ -65,11 +67,12 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
   }, [invoiceId, polling, router]);
 
   return (
+    <PaymentFocus active={focused} labelledBy={`${prefix}-title`}>
     <section
       className="card card-body mt-4 d-grid gap-3"
       aria-labelledby={`${prefix}-title`}
     >
-      <h2 className="h5 mb-0" id={`${prefix}-title`}>
+      <h2 className={`${focused ? "h4" : "h5"} mb-0`} id={`${prefix}-title`}>
         Demo payment
       </h2>
 
@@ -77,6 +80,7 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
         Uses the demo credentials and payment details on the vendor website.
         Processing continues if you leave this page. A matching confirmation
         marks this invoice paid automatically.
+        {focused && " You can use the navigation to leave this page while processing continues."}
       </p>
 
       {!enabled && (
@@ -282,5 +286,6 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
         </details>
       )}
     </section>
+    </PaymentFocus>
   );
 }

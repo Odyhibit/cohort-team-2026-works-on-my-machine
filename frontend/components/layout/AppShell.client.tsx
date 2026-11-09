@@ -15,7 +15,8 @@ export default function AppShell({ children, account, navigation }: { children: 
       <AppSidebar navigation={navigation} />
       <div className="wrapper d-flex flex-column min-vh-100">
         <AppHeader account={account} />
-        <div className="body flex-grow-1">
+        <div id="payment-focus-root" />
+        <div className="body flex-grow-1" data-payment-content>
           <CContainer className="px-4" lg>
             {/* usePathname() reads runtime URL data; Suspense keeps the route prerenderable. */}
             <Suspense fallback={null}><PaymentBanner /></Suspense>

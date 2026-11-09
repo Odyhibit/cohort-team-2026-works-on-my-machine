@@ -109,13 +109,13 @@ export default function Dashboard({
     {
       label: "Awaiting Approval",
       value: stats.awaitingApproval,
-      colorClass: "text-info",
+      colorClass: "text-warning",
       subtitle: "",
     },
     {
       label: "Approved",
       value: stats.approved,
-      colorClass: "text-success",
+      colorClass: "text-primary",
       subtitle: "",
     },
   ];

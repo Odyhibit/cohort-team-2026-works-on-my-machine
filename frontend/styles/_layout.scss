@@ -65,6 +65,39 @@ body {
   animation: payment-banner-spin 1.2s linear infinite;
 }
 
+// Below the sticky header/sidebar, above page content. CoreUI supplies sidebar
+// occupancy variables on .wrapper, which the payment portal root inherits.
+.payment-focus-overlay {
+  position: fixed;
+  inset-block-start: var(--payment-focus-top, 7rem);
+  inset-block-end: 0;
+  inset-inline-start: var(--cui-sidebar-occupy-start, 0);
+  inset-inline-end: var(--cui-sidebar-occupy-end, 0);
+  z-index: 1015;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.75rem, 3vw, 2rem);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(2px);
+}
+
+.payment-focus-panel {
+  width: min(100%, 44rem);
+  max-height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--cui-border-color);
+  border-radius: 0.75rem;
+  background: var(--cui-body-bg);
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2);
+
+  > section {
+    margin-top: 0 !important;
+    border: 0;
+  }
+}
+
 @keyframes payment-banner-spin {
   to {
     transform: rotate(360deg);
