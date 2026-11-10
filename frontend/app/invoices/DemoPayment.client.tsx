@@ -7,6 +7,7 @@ import { bannerColor, bannerIcon, bannerLabel, requestBannerRefresh } from "@/li
 import { paymentIcons } from "@/lib/invoices/payment-icons";
 import { checkDemoPayment, resolveDemoPayment, startDemoPayment, type PaymentState, type PaymentView } from "./payment-actions";
 import { CProgress } from "@coreui/react";
+import BrowserUseTaskLink from "@/components/BrowserUseTaskLink.client";
 
 async function requestPayment(action: () => Promise<PaymentState>): Promise<PaymentState> {
   try { return await action(); }
@@ -102,7 +103,7 @@ export default function DemoPayment({ invoiceId, initialAttempt, enabled }: {
 
           {attempt.run_id && (
             <span className="small text-body-secondary">
-              Browser Use task <code>{attempt.run_id}</code>
+              <BrowserUseTaskLink taskId={attempt.run_id} />
             </span>
           )}
 
