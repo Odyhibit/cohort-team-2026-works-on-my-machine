@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CAlert } from "@coreui/react";
 import CIcon from "@coreui/icons-react";
+import BrowserUseTaskLink from "@/components/BrowserUseTaskLink.client";
 import { getPaymentBanners } from "@/app/invoices/payment-actions";
 import { paymentIcons } from "@/lib/invoices/payment-icons";
 import {
@@ -104,7 +105,7 @@ export default function PaymentBanner() {
       <CIcon icon={paymentIcons[bannerIcon(item.status)]} size="xl" className={`flex-shrink-0${item.status === "running" ? " payment-banner-spin" : ""}`} aria-hidden="true" />
       <div>
         <div><strong>{bannerLabel(item.status)}:</strong> {item.message}</div>
-        {item.run_id && <p className="small mb-0">Browser Use task: <code>{item.run_id}</code></p>}
+        {item.run_id && <p className="small mb-0"><BrowserUseTaskLink taskId={item.run_id} /></p>}
         <Link href={`/invoices/${item.invoice_id}/edit`} className="alert-link" aria-label={`View invoice: ${bannerInvoiceLabel(item)}`}>{bannerInvoiceLabel(item)}</Link>
       </div>
     </CAlert>)}
