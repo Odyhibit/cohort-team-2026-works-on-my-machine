@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/users/access";
 import { loadEventRecords } from "@/lib/events/records";
 import FilterForm, { type FilterOptions, type FilterType } from "./FilterForm.client";
 import styles from "./events.module.scss";
+import EventTime from "./EventTime.client";
 
 type Props = { searchParams: Promise<{ [key: string]: string | string[] | undefined }> };
 type Change = { old: unknown; new: unknown };
@@ -49,9 +50,6 @@ const fieldLabels: Record<string, string> = {
   deleted_at: "Archived at",
   deleted_by: "Archived by",
 };
-const dateFormat = new Intl.DateTimeFormat("en-US", {
-  year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC", timeZoneName: "short",
-});
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
 const actionBadge: Record<string, string> = {
@@ -70,16 +68,18 @@ function valueText(field: string, value: unknown, names: Record<string, Map<stri
   if (value === null || value === undefined || value === "") return "";
   if (field === "deleted_by") return names[field].get(String(value)) ?? "Former user";
   if (field === "vendor_id" || field === "property_id") return names[field].get(String(value)) ?? String(value);
-  if (field === "deleted_at") {
-    const date = new Date(String(value));
-    return Number.isNaN(date.getTime()) ? String(value) : dateFormat.format(date);
-  }
   if (field === "autopay" && typeof value === "boolean") return value ? "On" : "Off";
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (field === "amount" && (typeof value === "number" || typeof value === "string") && Number.isFinite(Number(value))) {
     return money.format(Number(value));
   }
   return typeof value === "object" ? JSON.stringify(value) : String(value);
+}
+
+function changeValue(field: string, value: unknown, names: Record<string, Map<string, string>>) {
+  const text = valueText(field, value, names);
+  if (!text) return <><span aria-hidden="true" className="text-body-secondary">—</span><span className="visually-hidden">Not set</span></>;
+  return field === "deleted_at" ? <EventTime value={text} /> : text;
 }
 
 function pageHref(type: FilterType | "", id: string, page: number) {
@@ -181,7 +181,7 @@ async function EventViewer({ searchParams }: Props) {
                       <div className={styles.metadata}>
                         {event.actor_user_id && event.actor_type === "user"
                           ? <Link href={`/events?type=actor&id=${event.actor_user_id}`} className={styles.actor}>{actorName}</Link> : <span>{actorName}</span>}
-                        <time dateTime={event.occurred_at}>{dateFormat.format(new Date(event.occurred_at))}</time>
+                        <EventTime value={event.occurred_at} />
                       </div>
                     </div>
                     {event.reason && <p className="small text-body-secondary mt-2 mb-0">Reason: {event.reason}</p>}
@@ -193,8 +193,8 @@ async function EventViewer({ searchParams }: Props) {
                       <tbody>
                         {changes.map(([field, change]) => <tr key={field}>
                           <th scope="row">{fieldLabels[field] ?? field.replaceAll("_", " ")}</th>
-                          <td>{valueText(field, change?.old, changeNames) || <><span aria-hidden="true" className="text-body-secondary">—</span><span className="visually-hidden">Not set</span></>}</td>
-                          <td>{valueText(field, change?.new, changeNames) || <><span aria-hidden="true" className="text-body-secondary">—</span><span className="visually-hidden">Not set</span></>}</td>
+                          <td>{changeValue(field, change?.old, changeNames)}</td>
+                          <td>{changeValue(field, change?.new, changeNames)}</td>
                         </tr>)}
                       </tbody>
                     </table></div>}
