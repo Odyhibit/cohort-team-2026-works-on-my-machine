@@ -71,8 +71,8 @@ async function InvoiceTable() {
           <table className="table table-hover align-middle">
             <thead>
               <tr>
-                <th scope="col">Invoice #</th>
                 <th scope="col">Vendor</th>
+                <th scope="col">Invoice #</th>
                 <th scope="col">Property</th>
                 <th scope="col" className="text-end">Amount</th>
                 <th scope="col">Date</th>
@@ -83,8 +83,8 @@ async function InvoiceTable() {
             <tbody>
               {invoices.map((invoice) => (
                 <ClickableTableRow key={invoice.id} href={`/invoices/${invoice.id}/edit`}>
-                  <td className="fw-medium"><Link href={`/invoices/${invoice.id}/edit`} className="text-body text-decoration-none" aria-label={`Edit invoice ${invoice.reference_number}`}>{invoice.reference_number}</Link></td>
                   <td>{invoice.vendor?.name ?? "—"}</td>
+                  <td className="fw-medium"><Link href={`/invoices/${invoice.id}/edit`} className="text-body text-decoration-none" aria-label={`Edit invoice ${invoice.reference_number}`}>{invoice.reference_number}</Link></td>
                   <td>{invoice.property?.name ?? "—"}</td>
                   <td className="text-end">{currency.format(Number(invoice.amount))}</td>
                   <td>{formatDate(invoice.date)}</td>
