@@ -63,7 +63,7 @@ async function InvoiceEditor({ params, searchParams }: Props) {
 
   const paymentsEnabled = browserUseConfigured() && paymentWorkerConfigured();
   let paymentAttempt: PaymentView | null = null;
-  if (invoice.status === "payment processing" || (invoice.status === "approved" && paymentsEnabled)) {
+  if (invoice.status === "payment processing" || invoice.status === "autopay failed" || (invoice.status === "approved" && paymentsEnabled)) {
     const payment = await supabase.from("invoice_payment_attempts")
       .select("id, run_id, status, message, created_at, result")
       .eq("invoice_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle();

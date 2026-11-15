@@ -37,6 +37,7 @@ const statusBadge: Record<string, string> = {
   "waiting on approval": "text-bg-warning",
   approved: "text-bg-primary",
   "payment processing": "text-bg-primary",
+  "autopay failed": "text-bg-danger",
   paid: "text-bg-success",
 };
 
@@ -111,7 +112,7 @@ async function InvoiceTable({ searchParams }: Props) {
                   <td>{formatDate(invoice.date)}</td>
                   <td>{formatDate(invoice.due_date)}</td>
                   <td>
-                    <span style={{ width: "10rem" }} className={`badge d-inline-block text-center ${statusBadge[invoice.status] ?? "text-bg-light"}`}>
+                    <span style={{ width: "10rem" }} className={`badge rounded-pill d-inline-block text-center ${statusBadge[invoice.status] ?? "text-bg-light"}`}>
                       {isInvoiceStatus(invoice.status) ? invoiceStatusLabels[invoice.status] : invoice.status}
                     </span>
                   </td>

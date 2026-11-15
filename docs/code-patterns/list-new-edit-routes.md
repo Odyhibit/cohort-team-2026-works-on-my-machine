@@ -85,6 +85,12 @@ Shared pieces live outside the routes:
 - [`extract-invoice.ts`](../../frontend/lib/invoices/extract-invoice.ts) and [`invoice-parser.ts`](../../frontend/lib/invoices/invoice-parser.ts) turn PDF text into suggested form values.
 - [`extraction.ts`](../../frontend/lib/invoices/extraction.ts) validates parsed values and calls the server-only [`ai-extraction.ts`](../../frontend/lib/invoices/ai-extraction.ts) document reader when required fields are missing. Complete validated parser or AI results allow automatic intake; incomplete results require correction. See [AI extraction setup](../PLANS/ai-invoice-extraction.md).
 
+## Failed automatic payments
+
+The invoice status `autopay failed` displays as **Autopay failed** with a red pill in the invoice list and dashboard, and counts toward Needs Review. Invoice details stay locked until reopened for correction. Failed invoices show their latest payment attempt and support Retry demo payment, manual Pay, or a saved payment confirmation. The latest attempt remains visible even when automated payments are disabled, so the user can inspect its failure message and task history.
+
+`20261115000000_add_autopay_failed_invoice_status.sql` preserves `payment processing` and existing receipt validation. The authenticated and background settlement paths mark confirmed failures as `autopay failed`; reviewed uncertain attempts also move there when no payment occurred. Uncertain outcomes stay processing until reviewed. Retrying a failed invoice reserves a new attempt and returns it to processing. Duplicate callbacks on an old settled attempt cannot overwrite a later retry. Active approved invoices whose only recorded attempts failed are backfilled. Apply the migration before deploying this UI; if it has already been applied to the same database, no additional migration is needed.
+
 ## Request and save flow
 
 ```mermaid

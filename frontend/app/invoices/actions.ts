@@ -156,7 +156,7 @@ export async function updateInvoice(id: string, input: Omit<InvoiceInput, "date"
     .maybeSingle();
   if (currentError) return { error: currentError.message };
   if (!current) return { error: "Invoice not found or archived." };
-  if (isInvoiceLocked(current.status)) return { error: "Approved, processing and paid invoices cannot be edited." };
+  if (isInvoiceLocked(current.status)) return { error: "Approved invoices and invoices with failed autopay must be reopened before editing. Processing and paid invoices cannot be edited." };
 
   const [vendor, property] = await activeReferences(supabase, validated.values.vendor_id, validated.values.property_id);
   if (vendor.error) return { error: vendor.error.message };

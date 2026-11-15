@@ -109,6 +109,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
   const accountNumber = vendors.find((vendor) => vendor.id === fields.vendorId)?.account_number ?? "";
   const payUrl = paymentLink(fields.paymentUrl);
   const locked = isInvoiceLocked(invoice?.fields.status);
+  const canPay = invoice?.fields.status === "approved" || invoice?.fields.status === "autopay failed";
   const isDirty = !!invoice && (["vendorId", "propertyId", "invoiceNumber", "amountDue", "dueDate", "paymentUrl"] as const).some((key) => fields[key] !== invoice.fields[key]);
   const paymentUnresolved = demoPayment?.attempt && ["starting", "running", "uncertain"].includes(demoPayment.attempt.status);
   const [isLoading, startTransition] = useTransition();
@@ -149,7 +150,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
     if (!invoice) return;
     startSaving(async () => {
       try {
-        if (await isAutoPayable({ id: invoice.id, vendorId: fields.vendorId })) {
+        if (invoice.fields.status !== "autopay failed" && await isAutoPayable({ id: invoice.id, vendorId: fields.vendorId })) {
           // TODO: auto-pay
           setNotification({ color: "info", message: "Auto-pay is not available yet." });
           return;
@@ -342,7 +343,11 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
 
       <CForm id={formId} noValidate validated={validated} autoComplete={invoice ? undefined : "off"} onSubmit={handleSave}>
 
-      {invoice && locked && <CAlert color="info">This invoice is {invoiceStatusLabels[invoice.fields.status]}. Its details are locked after approval.</CAlert>}
+      {invoice && locked && <CAlert color={invoice.fields.status === "autopay failed" ? "danger" : "info"}>
+        {invoice.fields.status === "autopay failed"
+          ? "Autopay failed. Retry the payment, complete it manually, or reopen this invoice to correct its details."
+          : `This invoice is ${invoiceStatusLabels[invoice.fields.status]}. Its details are locked after approval.`}
+      </CAlert>}
 
       {(vendors.length === 0 || properties.length === 0) && (
         <CAlert color="warning">
@@ -434,7 +439,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
                 setNotification({ color: "danger", message: error instanceof Error ? error.message : "Could not approve invoice." });
               }
             })}>Approve</CButton>}
-          {invoice?.fields.status === "approved" && !paymentUnresolved && (payUrl ? (
+          {canPay && !paymentUnresolved && (payUrl ? (
             <CButton color="primary" size="sm" variant="outline" type="button" disabled={saving} onClick={handlePay}>Pay</CButton>
           ) : (
             <button type="button" disabled className="btn btn-sm btn-outline-primary" title="Enter a valid payment URL to enable Pay">Pay</button>
@@ -447,7 +452,7 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
           </CButton>}
         </div>
       </div>
-      {invoice && (invoice.fields.status === "approved" || invoice.fields.status === "payment processing") && demoPayment && <DemoPayment
+      {invoice && (canPay || invoice.fields.status === "payment processing") && demoPayment && <DemoPayment
         key={demoPayment.attempt?.id ?? invoice.id}
         invoiceId={invoice.id} enabled={demoPayment.enabled} initialAttempt={demoPayment.attempt}
       />}

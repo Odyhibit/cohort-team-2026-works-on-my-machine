@@ -118,7 +118,7 @@ async function DashboardContent() {
 
   // Calculate invoice status counts
   const needsReview = invoiceList.filter(
-    (invoice) => invoice.status === "created"
+    (invoice) => invoice.status === "created" || invoice.status === "autopay failed"
   ).length;
 
   const awaitingApproval = invoiceList.filter(

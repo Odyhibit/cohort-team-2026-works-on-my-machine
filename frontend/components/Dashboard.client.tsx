@@ -76,6 +76,8 @@ function getStatusColor(status: string) {
       return "primary" as const;
     case "paid":
       return "success" as const;
+    case "autopay failed":
+      return "danger" as const;
     default:
       return "secondary" as const;
   }
@@ -236,7 +238,7 @@ export default function Dashboard({
                       {formatDate(invoice.due_date)}
                     </CTableDataCell>
                     <CTableDataCell>
-                      <CBadge color={getStatusColor(invoice.status)}>
+                      <CBadge color={getStatusColor(invoice.status)} shape="rounded-pill">
                         {getStatusLabel(invoice.status)}
                       </CBadge>
                     </CTableDataCell>
