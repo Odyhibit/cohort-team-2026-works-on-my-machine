@@ -3,7 +3,6 @@
 import Link from "next/link";
 
 import {
-  CBadge,
   CButton,
   CCard,
   CCardBody,
@@ -69,6 +68,7 @@ function formatDate(value: string | null) {
 function getStatusColor(status: string) {
   switch (status) {
     case "created":
+      return "secondary" as const;
     case "waiting on approval":
       return "warning" as const;
     case "approved":
@@ -79,7 +79,7 @@ function getStatusColor(status: string) {
     case "autopay failed":
       return "danger" as const;
     default:
-      return "secondary" as const;
+      return "light" as const;
   }
 }
 
@@ -99,7 +99,7 @@ export default function Dashboard({
     {
       label: "Needs Review",
       value: stats.needsReview,
-      colorClass: "text-warning",
+      colorClass: `text-${getStatusColor("created")}`,
       subtitle: "",
     },
     {
@@ -111,13 +111,13 @@ export default function Dashboard({
     {
       label: "Awaiting Approval",
       value: stats.awaitingApproval,
-      colorClass: "text-info",
+      colorClass: `text-${getStatusColor("waiting on approval")}`,
       subtitle: "",
     },
     {
       label: "Approved",
       value: stats.approved,
-      colorClass: "text-success",
+      colorClass: `text-${getStatusColor("approved")}`,
       subtitle: "",
     },
   ];
@@ -238,9 +238,12 @@ export default function Dashboard({
                       {formatDate(invoice.due_date)}
                     </CTableDataCell>
                     <CTableDataCell>
-                      <CBadge color={getStatusColor(invoice.status)} shape="rounded-pill">
+                      <span
+                        style={{ width: "10rem" }}
+                        className={`badge rounded-pill d-inline-block text-center text-bg-${getStatusColor(invoice.status)}`}
+                      >
                         {getStatusLabel(invoice.status)}
-                      </CBadge>
+                      </span>
                     </CTableDataCell>
                   </ClickableTableRow>
                 ))}
