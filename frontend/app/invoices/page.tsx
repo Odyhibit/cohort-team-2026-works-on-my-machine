@@ -93,8 +93,8 @@ async function InvoiceTable({ searchParams }: Props) {
           <table className="table table-hover align-middle">
             <thead>
               <tr>
-                <th scope="col">Invoice #</th>
                 <th scope="col">Vendor</th>
+                <th scope="col">Invoice #</th>
                 <th scope="col">Property</th>
                 <th scope="col" className="text-end">Amount</th>
                 <th scope="col">Date</th>
@@ -102,23 +102,41 @@ async function InvoiceTable({ searchParams }: Props) {
                 <th scope="col">Status</th>
               </tr>
             </thead>
-            <tbody>
-              {invoices.map((invoice) => (
-                <ClickableTableRow key={invoice.id} href={invoiceEditUrl(invoice.id, view)}>
-                  <td className="fw-medium"><Link href={invoiceEditUrl(invoice.id, view)} className="text-body text-decoration-none" aria-label={`${invoice.status === "paid" ? "View" : "Edit"} invoice ${invoice.reference_number}`}>{invoice.reference_number}</Link></td>
-                  <td>{invoice.vendor?.name ?? "—"}</td>
-                  <td>{invoice.property?.name ?? "—"}</td>
-                  <td className="text-end">{currency.format(Number(invoice.amount))}</td>
-                  <td>{formatDate(invoice.date)}</td>
-                  <td>{formatDate(invoice.due_date)}</td>
-                  <td>
-                    <span style={{ width: "10rem" }} className={`badge rounded-pill d-inline-block text-center ${statusBadge[invoice.status] ?? "text-bg-light"}`}>
-                      {isInvoiceStatus(invoice.status) ? invoiceStatusLabels[invoice.status] : invoice.status}
-                    </span>
-                  </td>
-                </ClickableTableRow>
-              ))}
-            </tbody>
+           <tbody>
+            {invoices.map((invoice) => (
+              <ClickableTableRow
+                key={invoice.id}
+                href={invoiceEditUrl(invoice.id, view)}
+              >
+                <td>{invoice.vendor?.name ?? "—"}</td>
+                <td className="fw-medium">
+                  <Link
+                    href={invoiceEditUrl(invoice.id, view)}
+                    className="text-body text-decoration-none"
+                    aria-label={`${invoice.status === "paid" ? "View" : "Edit"} invoice ${invoice.reference_number}`}
+                  >
+                    {invoice.reference_number}
+                  </Link>
+                </td>
+                <td>{invoice.property?.name ?? "—"}</td>
+                <td className="text-end">
+                  {currency.format(Number(invoice.amount))}
+                </td>
+                <td>{formatDate(invoice.date)}</td>
+                <td>{formatDate(invoice.due_date)}</td>
+                <td>
+                  <span
+                    style={{ width: "10rem" }}
+                    className={`badge rounded-pill d-inline-block text-center ${statusBadge[invoice.status] ?? "text-bg-light"}`}
+                  >
+                    {isInvoiceStatus(invoice.status)
+                      ? invoiceStatusLabels[invoice.status]
+                      : invoice.status}
+                  </span>
+                </td>
+              </ClickableTableRow>
+            ))}
+          </tbody>
           </table>
         </div>
       )}
