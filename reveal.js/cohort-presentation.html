@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Utility Invoice Processing | CYC Fall 2026</title>
+  <link rel="stylesheet" href="dist/reveal.css">
+  <style>
+    :root { color-scheme: dark; --ink: #f7f5ee; --muted: #b6c5c9; --accent: #73e0cb; --line: #40545a; }
+    body { margin: 0; color: var(--ink); background: #14242a; font-family: "Inter", "Segoe UI", sans-serif; }
+    .reveal { --r-background-color: #14242a; --r-link-color: var(--accent); font-size: 27px; }
+    .reveal .slides { text-align: left; }
+    .reveal .slides > section { box-sizing: border-box; padding: 34px 48px; }
+    h1, h2, p, ol, dl { margin: 0; }
+    h1, h2 { line-height: 1.04; letter-spacing: -.045em; }
+    h1 { font-size: 106px; max-width: 950px; }
+    h2 { font-size: 65px; margin-bottom: 30px; }
+    p, li, dd { line-height: 1.38; }
+    .eyebrow { margin-bottom: 25px; color: var(--accent); font-size: 19px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+    .lede { margin-top: 25px; max-width: 870px; color: var(--muted); font-size: 34px; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 65px; }
+    .split p { margin-top: 10px; color: var(--muted); }
+    .split h3 { margin: 0; font-size: 33px; }
+    .workflow { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); padding: 0; gap: 22px; margin-top: 46px; }
+    .workflow li { border-top: 4px solid var(--accent); padding-top: 17px; font-size: 24px; font-weight: 700; }
+    .workflow span { display: block; margin-top: 9px; font-size: 20px; font-weight: 400; color: var(--muted); }
+    .rows { display: grid; grid-template-columns: 280px 1fr; }
+    .rows dt, .rows dd { border-top: 1px solid var(--line); padding: 17px 12px 17px 0; margin: 0; }
+    .rows dt { color: var(--accent); font-weight: 700; }
+    .rows dd { color: var(--muted); }
+    .demo { padding-left: 38px; }
+    .demo li { margin-bottom: 12px; padding-left: 8px; }
+    .demo li::marker, a { color: var(--accent); }
+    .foot { margin-top: 35px; font-size: 20px; color: var(--muted); }
+    .intro-grid, .data-grid { display: grid; align-items: center; gap: 42px; }
+    .intro-grid { grid-template-columns: 1fr 235px; }
+    .data-grid { grid-template-columns: 260px 1fr; }
+    .data-grid h3 { margin: 0 0 14px; }
+    .data-grid p { color: var(--muted); }
+    figure { margin: 0; }
+    .repo a { display: inline-grid; justify-items: center; gap: 12px; font-size: 20px; text-align: center; }
+    .repo img { background: #fff; display: block; }
+    .erd img { max-width: 100%; display: block; }
+    .erd figcaption { margin-top: 10px; font-size: 18px; color: var(--muted); }
+    .notes { display: none; }
+    body.fallback .reveal .slides { position: static; width: auto; height: auto; transform: none; }
+    body.fallback .reveal .slides > section { display: block; position: static; margin: auto; max-width: 1280px; border-bottom: 1px solid var(--line); }
+    @media (max-width: 720px) {
+      body.fallback h1 { font-size: 52px; }
+      body.fallback h2 { font-size: 40px; }
+      body.fallback .workflow, body.fallback .split, body.fallback .rows, body.fallback .intro-grid, body.fallback .data-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="fallback">
+  <main class="reveal">
+    <div class="slides">
+      <section id="intro">
+        <div class="intro-grid">
+          <div>
+            <p class="eyebrow">Dallas Software Developers · CYC Fall 2026</p>
+            <h1>Works on My Machine</h1>
+            <p class="lede">Team 5 · Utility invoice processing</p>
+          </div>
+          <figure class="repo">
+            <a href="https://github.com/dallassoftwaredevelopers/cohort-team-2026-works-on-my-machine"><img src="cohort-github-qr.svg" width="188" height="188" alt="QR code linking to the Team 5 GitHub repository">Project on GitHub</a>
+          </figure>
+        </div>
+        <aside class="notes">Amy (tentative). Introduce the cohort and Team 5. Use the confirmed names and short professional bios from the team handoff.</aside>
+      </section>
+
+      <section id="problem">
+        <h2>Manual utility invoice processing</h2>
+        <div class="split">
+          <div><h3>Re-entering invoice details</h3><p>Accounts-payable staff read vendor PDFs and enter the same details into a separate system.</p></div>
+          <div><h3>Checking before payment</h3><p>Staff verify the bill against the record, resolve discrepancies and get approval before it can be paid.</p></div>
+        </div>
+        <p class="lede">Our app pulls key fields from the PDF and gives reviewers the original bill alongside the extracted details.</p>
+        <aside class="notes">Tim. Explain where the manual work occurs and why the reviewer still needs the original bill. Hand off to Josh for the walkthrough.</aside>
+      </section>
+
+      <section id="walkthrough">
+        <h2>Product walkthrough</h2>
+        <ol class="workflow">
+          <li>Upload<span>Open a fictional utility bill.</span></li>
+          <li>Extract<span>Populate vendor, invoice number, total and due date.</span></li>
+          <li>Review<span>Compare with the PDF, correct a field and save.</span></li>
+          <li>Approve<span>Show the approval decision and payment eligibility.</span></li>
+          <li>Confirm<span>Show the recorded result of a mock payment.</span></li>
+        </ol>
+        <aside class="notes">Josh. Reopen the record to show the correction persisted. Use a fictional invoice and vendor portal for the payment demo.</aside>
+      </section>
+
+      <section id="decision-logic">
+        <h2>Probabilistic and deterministic steps</h2>
+        <div class="split">
+          <div><h3>Probabilistic</h3><p>In the mock payment agent prototype, a model proposes what to do next based on what it sees in the vendor portal.</p></div>
+          <div><h3>Deterministic</h3><p>PDF parsing and approval rules follow code. The payment workflow checks eligibility and validates proposed actions before execution.</p></div>
+        </div>
+        <p class="lede">A person confirms the mock payment.</p>
+        <aside class="notes">Josh. Use one portal navigation decision and one payment eligibility check to show the difference.</aside>
+      </section>
+
+      <section id="stack">
+        <h2>Quick tech stack</h2>
+        <dl class="rows">
+          <dt>Application</dt><dd>Next.js, React and TypeScript with CoreUI and Sass.</dd>
+          <dt>PDF extraction</dt><dd>pdf-parse reads the PDF text. A parser maps it to invoice fields.</dd>
+          <dt>Data and access</dt><dd>Supabase provides Postgres, authentication and document storage.</dd>
+          <dt>Mock payment agent</dt><dd>OpenRouter provides model access. Playwright runs browser actions in the fictional vendor portal.</dd>
+        </dl>
+        <aside class="notes">Cheryl. Keep the stack brief, then walk through the AI workflow on the next slide.</aside>
+      </section>
+
+      <section id="ai-workflow">
+        <h2>AI workflow for mock payments</h2>
+        <ol class="workflow">
+          <li>Observe<span>Read the fictional portal page.</span></li>
+          <li>Propose<span>The model suggests the next browser action.</span></li>
+          <li>Validate<span>Code checks the action against the allowed operations.</span></li>
+          <li>Execute<span>Playwright carries out the accepted action and returns the new page state.</span></li>
+          <li>Confirm<span>The user reviews the prepared payment before submission.</span></li>
+        </ol>
+        <aside class="notes">Cheryl. Observe, propose, validate and execute repeat until the payment is ready for review or the agent stops for help. Present this as the mock payment agent prototype.</aside>
+      </section>
+
+      <section id="process">
+        <h2>How Team 5 worked</h2>
+        <dl class="rows">
+          <dt>Miro</dt><dd>Shared planning and visual collaboration.</dd>
+          <dt>Jira</dt><dd>Tracked work as DC issues and assigned tasks.</dd>
+          <dt>GitHub</dt><dd>Collaborated on code through branches and pull requests.</dd>
+          <dt>Discord</dt><dd>Coordinated team conversations and handoffs.</dd>
+        </dl>
+        <aside class="notes">Tim. Show the Jira board and Miro workspace. Pick one issue you can trace through a GitHub pull request.</aside>
+      </section>
+
+      <section id="supabase">
+        <h2>Supabase and the invoice data model</h2>
+        <div class="data-grid">
+          <div>
+            <h3>Supabase</h3>
+            <p>Postgres stores invoices, vendors and properties. Authentication and profiles identify the people using the app.</p>
+          </div>
+          <figure class="erd">
+            <a href="cohort-invoice-erd.jpg" target="_blank" rel="noopener"><img src="cohort-invoice-erd.jpg" alt="Early entity-relationship diagram showing invoices, vendors, properties, profiles and Supabase Auth users"></a>
+            <figcaption>Early ERD from the project repository · select to enlarge</figcaption>
+          </figure>
+        </div>
+        <aside class="notes">Tim. Open the Supabase project beside the ERD during the presentation. Point out how an invoice links to its vendor and property, then show those tables in Supabase. The checked-in ERD represents an early schema.</aside>
+      </section>
+
+      <section id="github">
+        <h2>Project repository</h2>
+        <figure class="repo">
+          <a href="https://github.com/dallassoftwaredevelopers/cohort-team-2026-works-on-my-machine"><img src="cohort-github-qr.svg" width="245" height="245" alt="QR code linking to the Team 5 GitHub repository">Works on My Machine on GitHub</a>
+        </figure>
+        <aside class="notes">Leave the QR code on screen for questions.</aside>
+      </section>
+    </div>
+  </main>
+  <script src="dist/reveal.js"></script>
+  <script src="dist/plugin/notes.js"></script>
+  <script>
+    if (window.Reveal) {
+      document.body.classList.remove('fallback');
+      Reveal.initialize({
+        width: 1280,
+        height: 720,
+        margin: 0.04,
+        hash: true,
+        slideNumber: 'c/t',
+        transition: 'fade',
+        plugins: window.RevealNotes ? [window.RevealNotes] : [],
+      }).catch(error => {
+        document.body.classList.add('fallback');
+        console.error(error);
+      });
+    }
+  </script>
+</body>
+</html>
+
+
