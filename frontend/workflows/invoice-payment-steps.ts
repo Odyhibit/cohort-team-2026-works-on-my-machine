@@ -16,7 +16,7 @@ export async function checkPaymentStep(attemptId: string): Promise<boolean> {
   "use step";
   const supabase = createPaymentWorkerClient();
   const { data, error } = await supabase.from("invoice_payment_attempts").select("*").eq("id", attemptId).single();
-  if (error) throw new Error("Could not read the saved payment attempt.");
+  if (error) throw new Error(`Could not read the saved payment attempt: ${error.code ?? "no code"} ${error.message}`);
   const attempt = data as PaymentAttempt;
   if (["succeeded", "failed", "uncertain"].includes(attempt.status)) return true;
   // Retries repeat only GETs and an idempotent, transactional settlement RPC.
@@ -32,7 +32,7 @@ export async function expirePaymentStep(attemptId: string, message: string) {
   "use step";
   const supabase = createPaymentWorkerClient();
   const { data, error } = await supabase.from("invoice_payment_attempts").select("invoice_id, status").eq("id", attemptId).single();
-  if (error) throw new Error("Could not read the saved payment attempt.");
+  if (error) throw new Error(`Could not read the saved payment attempt: ${error.code ?? "no code"} ${error.message}`);
   if (data.status !== "starting" && data.status !== "running") return;
   const saved = await supabase.rpc("finish_invoice_payment_in_background", {
     p_attempt_id: attemptId, p_status: "uncertain", p_result: null,

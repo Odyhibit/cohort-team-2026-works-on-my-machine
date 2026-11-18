@@ -30,3 +30,11 @@ for (const [filename, vendorName, propertyName, amountDue] of examples) {
     });
   });
 }
+
+test("parsing leaves the caller's bytes intact for the AI fallback", async () => {
+  const data = new Uint8Array(await readFile(join(__dirname, "__fixtures__", "northline-bill.pdf")));
+  const length = data.length;
+  await extractInvoiceFromPdf(data);
+  // pdf.js takes ownership of the buffer it is given; the same bytes are sent to Gemini afterwards.
+  assert.equal(data.length, length);
+});
