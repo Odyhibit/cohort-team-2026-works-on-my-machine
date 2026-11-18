@@ -240,12 +240,14 @@ export function InvoiceFormClient({ vendors: vendorsProp, properties: properties
         router.push(`/invoices/${saved.id}/edit`);
         return;
       }
+      // Mark required fields the reader could not fill (red) so a person sees what needs attention.
+      setValidated(true);
       const problems = [
         !vendor && (details.vendorName ? `No unique vendor match for “${details.vendorName}”.` : "Vendor not found in the document."),
         !property && (details.propertyName ? `No unique property match for “${details.propertyName}”.` : "Property not found in the document."),
       ].filter(Boolean);
       setNotification({
-        color: "info",
+        color: "danger",
         message: `${result.warning ?? "Complete or check the extracted details, then save."} ${problems.join(" ")}`.replace(/\s+/g, " ").trim(),
       });
     } catch (error) {
